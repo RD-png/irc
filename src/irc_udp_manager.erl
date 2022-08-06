@@ -42,8 +42,7 @@ init([]) ->
   {ok, #state{socket = Socket}}.
 
 handle_call(_Request, _From, State) ->
-  Reply = ok,
-  {reply, Reply, State}.
+  {reply, ok, State}.
 
 handle_cast(_Request, State) ->
   {noreply, State}.
@@ -51,8 +50,8 @@ handle_cast(_Request, State) ->
 handle_info(_Info, State) ->
   {noreply, State}.
 
-terminate(_Reason, _State) ->
-  ok.
+terminate(_Reason, _State = #state{socket = Socket}) ->
+  gen_udp:close(Socket).
 
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.

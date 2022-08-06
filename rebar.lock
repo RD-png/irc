@@ -1,1 +1,4 @@
-[].
+[{<<"poolboy">>,
+  {git,"https://github.com/devinus/poolboy",
+       {ref,"9212a8770edb149ee7ca0bca353855e215f7cba5"}},
+  0}].

@@ -37,7 +37,6 @@ start_link() ->
 %%%-------------------------------------------------------------------
 
 init([]) ->
-  process_flag(trap_exit, true),
   {ok, #state{}}.
 
 handle_call(_Request, _From, State) ->
