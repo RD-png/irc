@@ -1,8 +1,11 @@
 %%%-------------------------------------------------------------------
-%% @doc irc top level supervisor.
-%% @end
+%%% @author Ryan User <ryan@nixos-desktop>
+%%% @copyright (C) 2022, Ryan User
+%%% @doc
+%%% irc top level supervisor.
+%%% @end
+%%% Created :  6 Aug 2022 by Ryan User <ryan@nixos-desktop>
 %%%-------------------------------------------------------------------
-
 -module(irc_sup).
 
 -behaviour(supervisor).
@@ -20,8 +23,18 @@ init([]) ->
   SupFlags = #{strategy => one_for_all,
                intensity => 0,
                period => 1},
-  ChildSpecs = [],
+  ChildSpecs = [irc_udp_manager_spec()],
   
   {ok, {SupFlags, ChildSpecs}}.
 
-%% internal functions
+%%%-------------------------------------------------------------------
+%% Internal Functions
+%%%-------------------------------------------------------------------
+
+irc_udp_manager_spec() ->
+  #{id => irc_udp_manager,
+    start => {irc_udp_manager, start_link, []},
+    restart => permanent,
+    shutdown => 5000,
+    type => worker,
+    modules => [irc_udp_manager]}.

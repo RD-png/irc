@@ -1,7 +1,6 @@
 REBAR=rebar3
 ERL=erl
 
-
 compile:
 	${REBAR} compile
 
