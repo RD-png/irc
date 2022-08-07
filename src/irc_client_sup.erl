@@ -16,7 +16,8 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--define(SERVER, ?MODULE).
+-define(SERVER,          ?MODULE).
+-define(IRC_UDP_MANAGER, irc_udp_manager).
 
 %%%===================================================================
 %%% API functions
@@ -43,13 +44,14 @@ init([]) ->
 %%%===================================================================
 
 irc_udp_manager_spec() ->
-  #{id => irc_udp_manager,
-    start => {irc_udp_manager, start_link, []},
+  #{id => ?IRC_UDP_MANAGER,
+    start => {?IRC_UDP_MANAGER, start_link, []},
     restart => permanent,
     shutdown => 5000,
     type => worker,
-    modules => [irc_udp_manager]}.
+    modules => [?IRC_UDP_MANAGER]}.
 
 irc_udp_worker_pool_spec() ->
   PoolArgs = irc_app:get_env(udp_pool_args),
-  poolboy:child_spec(irc_upd_workers, PoolArgs, []).    
+  PoolName = proplists:get_value(name, PoolArgs),
+  poolboy:child_spec(PoolName, PoolArgs, []).
