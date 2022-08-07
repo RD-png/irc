@@ -13,6 +13,9 @@ dev:
 	${REBAR} shell --config config/sys.config
 
 deps:
+	${REBAR} deps
+
+tree:
 	${REBAR} tree
 
 dialyzer:

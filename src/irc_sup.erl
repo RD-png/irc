@@ -14,7 +14,8 @@
 
 -export([init/1]).
 
--define(SERVER, ?MODULE).
+-define(SERVER,         ?MODULE).
+-define(IRC_CLIENT_SUP, irc_client_sup).
 
 start_link() ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
@@ -23,7 +24,7 @@ init([]) ->
   SupFlags = #{strategy => one_for_all,
                intensity => 0,
                period => 1},
-  ChildSpecs = [irc_udp_manager_spec()],
+  ChildSpecs = [irc_client_sup_spec()],
   
   {ok, {SupFlags, ChildSpecs}}.
 
@@ -31,10 +32,10 @@ init([]) ->
 %% Internal Functions
 %%%-------------------------------------------------------------------
 
-irc_udp_manager_spec() ->
-  #{id => irc_udp_manager,
-    start => {irc_udp_manager, start_link, []},
+irc_client_sup_spec() ->
+  #{id => ?IRC_CLIENT_SUP,
+    start => {?IRC_CLIENT_SUP, start_link, []},
     restart => permanent,
     shutdown => 5000,
     type => worker,
-    modules => [irc_udp_manager]}.
+    modules => [?IRC_CLIENT_SUP]}.
