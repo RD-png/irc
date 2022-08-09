@@ -37,5 +37,5 @@ irc_client_sup_spec() ->
     start => {?IRC_CLIENT_SUP, start_link, []},
     restart => permanent,
     shutdown => 5000,
-    type => worker,
+    type => supervisor,
     modules => [?IRC_CLIENT_SUP]}.

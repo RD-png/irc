@@ -1,61 +1,59 @@
 %%%-------------------------------------------------------------------
-%%% @author Ryan User <ryan@nixos-desktop>
+%%% @author Ryan User <ryan@nixos-laptop>
 %%% @copyright (C) 2022, Ryan User
 %%% @doc
 %%%
 %%% @end
-%%% Created :  7 Aug 2022 by Ryan User <ryan@nixos-desktop>
+%%% Created :  9 Aug 2022 by Ryan User <ryan@nixos-laptop>
 %%%-------------------------------------------------------------------
--module(irc_client_sup).
+-module(irc_udp_client_sup).
+-author("ryandenby").
 
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/0,
+         create_client/3]).
 
 %% Supervisor callbacks
 -export([init/1]).
 
--define(SERVER,             ?MODULE).
--define(IRC_UDP_MANAGER,    irc_udp_manager).
--define(IRC_UDP_CLIENT_SUP, irc_udp_client_sup).
+-define(SERVER,         ?MODULE).
+-define(IRC_UDP_CLIENT, irc_udp_client).
+
 
 %%%===================================================================
 %%% API functions
 %%%===================================================================
 
+%%--------------------------------------------------------------------
+%% @doc
+%% Starts the supervisor
+%% @end
+%%--------------------------------------------------------------------
 start_link() ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+
+create_client(Socket, Address, Port) ->
+  supervisor:start_child(?MODULE, [Socket, Address, Port]).
 
 %%%===================================================================
 %%% Supervisor callbacks
 %%%===================================================================
 
 init([]) ->
-  SupFlags = #{strategy => one_for_one,
+  SupFlags = #{strategy => simple_one_for_one,
                intensity => 1,
                period => 5},
-  ChildSpec = [irc_udp_manager_spec(),
-               irc_udp_client_sup_spec()],
+  ChildSpec = [#{id => ?IRC_UDP_CLIENT,
+                 start => {?IRC_UDP_CLIENT, start_link, []},
+                 restart => permanent,
+                 shutdown => 5000,
+                 type => worker,
+                 modules => [?IRC_UDP_CLIENT]}],
 
   {ok, {SupFlags, ChildSpec}}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-irc_udp_manager_spec() ->
-  #{id => ?IRC_UDP_MANAGER,
-    start => {?IRC_UDP_MANAGER, start_link, []},
-    restart => permanent,
-    shutdown => 5000,
-    type => worker,
-    modules => [?IRC_UDP_MANAGER]}.
-
-irc_udp_client_sup_spec() ->
-  #{id => ?IRC_UDP_CLIENT_SUP,
-    start => {?IRC_UDP_CLIENT_SUP, start_link, []},
-    restart => permanent,
-    shutdown => 5000,
-    type => worker,
-    modules => [?IRC_UDP_CLIENT_SUP]}.

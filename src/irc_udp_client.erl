@@ -6,12 +6,12 @@
 %%% @end
 %%% Created :  6 Aug 2022 by Ryan User <ryan@nixos-desktop>
 %%%-------------------------------------------------------------------
--module(irc_udp_worker).
+-module(irc_udp_client).
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/1]).
+-export([start_link/3]).
 
 %% gen_server callbacks
 -export([init/1, 
@@ -21,23 +21,28 @@
          terminate/2, 
          code_change/3]).
 
-%% -define(SERVER, ?MODULE).
+-define(SERVER, ?MODULE).
 
--record(state, {}).
+-record(state, {socket  :: inet:socket(),
+                address :: inet:ip_address(),
+                port    :: port()}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-start_link(Args) ->
-  gen_server:start_link(?MODULE, Args, []).
+start_link(Socket, Address, Port) ->
+  gen_server:start_link(?MODULE, [Socket, Address, Port], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init([]) ->
-  {ok, #state{}}.
+init([Socket, Address, Port]) ->
+  Client = #state{socket  = Socket,
+                  address = Address,
+                  port    = Port},
+  {ok, Client}.
 
 handle_call(_Request, _From, State) ->
   Reply = ok,
