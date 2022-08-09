@@ -24,8 +24,6 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {socket :: inet:socket()}).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -38,8 +36,8 @@ start_link() ->
 %%%===================================================================
 
 init([]) ->
-  {ok, Socket} = start_udp(),
-  {ok, #state{socket = Socket}}.
+  {ok, _Socket} = start_udp(),
+  {ok, []}.
 
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
@@ -47,11 +45,22 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
   {noreply, State}.
 
+handle_info({udp, Socket, Address, Port, _Msg} = Packet, State) ->
+  {NewState, Client} = case lists:keyfind({Address, Port}, 1, State) of
+                         {_Key, ClientPID} ->
+                           {State, ClientPID};
+                         false ->
+                           {ok, ClientPID} = irc_udp_client_sup:create_client(Socket, Address, Port),
+                           UpdatedState = register_client({Address, Port}, ClientPID, State),
+                           {UpdatedState, ClientPID}
+                         end,
+  Client ! Packet,
+  {noreply, NewState};
 handle_info(_Info, State) ->
   {noreply, State}.
 
-terminate(_Reason, _State = #state{socket = Socket}) ->
-  gen_udp:close(Socket).
+terminate(_Reason, _State) ->
+  ok.
 
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
@@ -63,3 +72,6 @@ code_change(_OldVsn, State, _Extra) ->
 start_udp() ->
   Port = irc_app:get_env(udp_port),
   gen_udp:open(Port, [{mode, binary}, {active, true}, {reuseaddr, true}]).
+
+register_client(Key, ClientPID, State) ->
+  [{Key, ClientPID} | State].
