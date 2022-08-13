@@ -46,8 +46,8 @@ handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({udp, Socket, Address, Port, _Msg} = Packet, State) ->
-  {NewState, Client} = case lists:keyfind({Address, Port}, 1, State) of
-                         {_Key, ClientPID} ->
+  {NewState, Client} = case is_registered_client({Address, Port}, State) of
+                         {_Key, ClientPID}->
                            {State, ClientPID};
                          false ->
                            {ok, ClientPID} = irc_udp_client_sup:create_client(Socket, Address, Port),
@@ -75,3 +75,6 @@ start_udp() ->
 
 register_client(Key, ClientPID, State) ->
   [{Key, ClientPID} | State].
+
+is_registered_client(Key, State) ->
+  lists:keyfind(Key, 1, State).
