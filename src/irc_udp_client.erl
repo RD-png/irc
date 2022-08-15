@@ -14,33 +14,33 @@
 -export([start_link/3]).
 
 %% gen_server callbacks
--export([init/1, 
-         handle_call/3, 
+-export([init/1,
+         handle_call/3,
          handle_cast/2,
          handle_info/2,
-         terminate/2, 
+         terminate/2,
          code_change/3]).
 
 -define(SERVER, ?MODULE).
 
 -record(state, {socket  :: inet:socket(),
-                address :: inet:ip_address(),
+                host    :: inet:ip_address(),
                 port    :: port()}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-start_link(Socket, Address, Port) ->
-  gen_server:start_link(?MODULE, [Socket, Address, Port], []).
+start_link(Socket, Host, Port) ->
+  gen_server:start_link(?MODULE, [Socket, Host, Port], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init([Socket, Address, Port]) ->
+init([Socket, Host, Port]) ->
   Client = #state{socket  = Socket,
-                  address = Address,
+                  host    = Host,
                   port    = Port},
   {ok, Client}.
 
@@ -51,6 +51,9 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
   {noreply, State}.
 
+handle_info({udp, Socket, Host, Port, Msg}, State) ->
+  gen_udp:send(Socket, Host, Port, Msg),
+  {noreply, State};
 handle_info(_Info, State) ->
   {noreply, State}.
 

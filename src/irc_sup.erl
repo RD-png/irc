@@ -25,7 +25,7 @@ init([]) ->
                intensity => 0,
                period => 1},
   ChildSpecs = [irc_client_sup_spec()],
-  
+
   {ok, {SupFlags, ChildSpecs}}.
 
 %%%-------------------------------------------------------------------

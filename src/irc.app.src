@@ -1,11 +1,14 @@
 {application, irc,
- [{description, "An OTP application"},
+ [{description, "IRC like chat server"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {irc_app, []}},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+
+    %% Deps
+    ranch
    ]},
   {env,[]},
   {modules, []},
