@@ -1,4 +1,4 @@
-[{<<"poolboy">>,
-  {git,"https://github.com/devinus/poolboy",
-       {ref,"9212a8770edb149ee7ca0bca353855e215f7cba5"}},
+[{<<"ranch">>,
+  {git,"https://github.com/ninenines/ranch",
+       {ref,"adf1822defc2b7cfdc7aca112adabfa1d614043c"}},
   0}].
