@@ -23,6 +23,7 @@
 %%%-------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
+  irc_clients:init(),
   irc_sup:start_link().
 
 stop(_State) ->

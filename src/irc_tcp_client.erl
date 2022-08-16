@@ -30,7 +30,8 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, _Opts = []) ->
   {ok, Socket} = ranch:handshake(Ref),
-  %% ok = Transport:setopts(Socket, [binary, {active, once}]),
+  ID = uuid:uuid1(),
+  irc_clients:register_client(ID, "test", Socket),
   loop(Socket, Transport).
 
 %%%===================================================================
