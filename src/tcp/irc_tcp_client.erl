@@ -10,8 +10,6 @@
 
 -behaviour(ranch_protocol).
 
--include("irc.hrl").
-
 %% API
 -export([start_link/3]).
 
@@ -32,6 +30,7 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, _Opts = []) ->
   {ok, Socket} = ranch:handshake(Ref),
+  irc_clients:register_client("test", Socket),
   loop(Socket, Transport).
 
 %%%===================================================================
@@ -39,7 +38,7 @@ init(Ref, Transport, _Opts = []) ->
 %%%===================================================================
 
 loop(Socket, Transport) ->
-  case Transport:recv(Socket, 0, ?CLIENT_SOCKET_TIMEOUT) of
+  case Transport:recv(Socket, 0, 5000) of
     {ok, Packet} ->
       Response = handle(Packet),
       Transport:send(Socket, Response),

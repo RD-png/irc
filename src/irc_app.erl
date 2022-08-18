@@ -23,10 +23,11 @@
 %%%-------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
-  irc_clients:init(),
+  irc_mnesia:start(),
   irc_sup:start_link().
 
 stop(_State) ->
+  irc_mnesia:stop(),
   ok.
 
 -spec get_env(Key) -> Value | no_return() when
