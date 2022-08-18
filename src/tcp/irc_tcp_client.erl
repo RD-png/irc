@@ -30,7 +30,7 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, _Opts = []) ->
   {ok, Socket} = ranch:handshake(Ref),
-  irc_clients:register_client("test", Socket),
+  irc_client:register_client("test", Socket),
   loop(Socket, Transport).
 
 %%%===================================================================

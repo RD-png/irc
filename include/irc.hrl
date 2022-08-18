@@ -2,6 +2,7 @@
 %%% Types
 %%%===================================================================
 
+-type socket_connection() :: tcp_connection() | udp_connection().
 -type tcp_connection() :: inet:socket().
 -type udp_connection() :: {inet:socket(), inet:ip_address(), inet:port_number()}.
 
@@ -20,8 +21,7 @@
                  name             :: string(),
                  joined           :: calendar:time(),
                  channels    = [] :: [uuid:uuid()],
-                 protocol         :: tcp_connection()
-                                   | udp_connection()}).
+                 protocol         :: socket_connection()}).
 
 %%%===================================================================
 %%% Macros
