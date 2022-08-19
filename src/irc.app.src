@@ -9,6 +9,7 @@
     mnesia,
 
     %% Deps
+    lager,
     ranch
    ]},
   {env,[]},

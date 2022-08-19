@@ -11,21 +11,28 @@
 -include("irc.hrl").
 
 %% API
--export([register_client/2]).
+-export([register/2,
+         unregister/1]).
+
+-define(CLIENT_TABLE, client).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
--spec register_client(Name, Protocol) -> ok when
+-spec register(Name, Protocol) -> Client when
     Name     :: string(),
-    Protocol :: socket_connection().
-register_client(Name, Protocol) ->  
-  Register = fun() ->
-                 Client = #client{id       = uuid:uuid1(),
-                                  name     = Name,
-                                  joined   = time(),
-                                  protocol = Protocol},
-                 mnesia:write(Client)
-             end,
-  mnesia:activity(transaction, Register).
+    Protocol :: socket_connection(),
+    Client   :: client().
+register(Name, Protocol) ->
+  Client = #client{id       = uuid:uuid1(),
+                   name     = Name,
+                   joined   = time(),
+                   protocol = Protocol},
+  mnesia:dirty_write(Client),
+  Client.
+
+-spec unregister(ClientID) -> ok when
+    ClientID :: client().
+unregister(ClientID) ->
+  ok = mnesia:dirty_delete({?CLIENT_TABLE, ClientID}).

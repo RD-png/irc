@@ -10,6 +10,9 @@
 
 -behaviour(ranch_protocol).
 
+-include("irc.hrl").
+-include("irc_socket.hrl").
+
 %% API
 -export([start_link/3]).
 
@@ -30,22 +33,27 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, _Opts = []) ->
   {ok, Socket} = ranch:handshake(Ref),
-  irc_client:register_client("test", Socket),
-  loop(Socket, Transport).
+  State = irc_client:register("test", Socket),
+  loop(Socket, Transport, State).
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-loop(Socket, Transport) ->
-  case Transport:recv(Socket, 0, 5000) of
+loop(Socket, Transport, State) ->
+  case Transport:recv(Socket, 0, ?SOCKET_TIMEOUT) of
     {ok, Packet} ->
       Response = handle(Packet),
       Transport:send(Socket, Response),
-      loop(Socket, Transport);
-    _ ->
-      ok = Transport:close(Socket)
-  end.
+      loop(Socket, Transport, State);
+    {error, timeout} ->
+      Transport:send(Socket, ?TIMEOUT_MSG),
+      irc_client:unregister(State#client.id);
+    {error, Reason} ->
+      lager:err("TCP Client '~p' exited with reason '~p'",
+                [State#client.protocol, Reason])
+  end,
+  ok = Transport:close(Socket).
 
 handle(Packet) ->
   Packet.
