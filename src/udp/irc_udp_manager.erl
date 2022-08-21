@@ -71,7 +71,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 start_udp() ->
   Port = irc_app:get_env(udp_port),
-  gen_udp:open(Port, [{mode, binary}, {active, true}, {reuseaddr, true}]).
+  gen_udp:open(Port, [{mode, binary}, {reuseaddr, true}]).
 
 register_client(Key, ClientPID, State) ->
   [{Key, ClientPID} | State].

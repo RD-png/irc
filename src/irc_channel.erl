@@ -27,4 +27,4 @@ create(ChannelName, OwnerID) ->
                      owner = OwnerID,
                      clients = [OwnerID]},
   mnesia:dirty_write(Channel),
-  Channel#channel.id.
+  {ok, Channel#channel.id}.

@@ -10,6 +10,9 @@
 
 -behaviour(gen_server).
 
+-include("irc.hrl").
+-include("irc_socket.hrl").
+
 %% API
 -export([start_link/3]).
 
@@ -23,25 +26,19 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {socket  :: inet:socket(),
-                host    :: inet:ip_address(),
-                port    :: port()}).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
 
 start_link(Socket, Host, Port) ->
-  gen_server:start_link(?MODULE, [Socket, Host, Port], []).
+  gen_server:start_link(?MODULE, [{Socket, Host, Port}], []).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init([Socket, Host, Port]) ->
-  Client = #state{socket  = Socket,
-                  host    = Host,
-                  port    = Port},
+init([Protocol]) ->
+  Client = irc_client:register("test2", Protocol),
   {ok, Client}.
 
 handle_call(_Request, _From, State) ->
@@ -51,10 +48,17 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
   {noreply, State}.
 
-handle_info({udp, Socket, Host, Port, Msg}, State) ->
-  gen_udp:send(Socket, Host, Port, Msg),
-  {noreply, State};
-handle_info(_Info, State) ->
+handle_info({udp, Socket, Host, Port, Packet}, State) ->
+  NewState = case handle(Packet, State) of
+               {ok, HandleState} ->
+                 HandleState;
+               {Response, HandleState}->
+                 gen_udp:send(Socket, Host, Port, Response),
+                 HandleState
+             end,
+  {noreply, NewState};
+handle_info(Info, State) ->
+  lager:error("Received unhandled message ~p", [Info]),
   {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -66,3 +70,8 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+handle(<<"create_channel! ", _ChannelName/binary>>, State) ->
+  {"test", State};
+handle(Packet, State) ->
+  {?INVALID_COMMAND(Packet), State}.

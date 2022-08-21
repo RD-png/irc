@@ -2,8 +2,7 @@
 %%% Records
 %%%===================================================================
 
--record(channel, {id                :: channel_id(),
-                  name       = <<>> :: binary(),
+-record(channel, {name       = <<>> :: binary(),
                   topic      = <<>> :: binary(),
                   owner             :: client_id(),
                   moderators = []   :: [client_id()],
