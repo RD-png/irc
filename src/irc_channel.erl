@@ -11,4 +11,20 @@
 -include("irc.hrl").
 
 %% API
--export([]).
+-export([create/2]).
+
+%%%===================================================================
+%%% API
+%%%===================================================================
+
+-spec create(ChannelName, OwnerID) -> ChannelID when
+    ChannelName :: binary(),
+    OwnerID     :: client_id(),
+    ChannelID   :: channel_id().
+create(ChannelName, OwnerID) ->
+  Channel = #channel{id = uuid:uuid1(),
+                     name = ChannelName,
+                     owner = OwnerID,
+                     clients = [OwnerID]},
+  mnesia:dirty_write(Channel),
+  Channel#channel.id.

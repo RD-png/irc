@@ -2,18 +2,18 @@
 %%% Records
 %%%===================================================================
 
--record(channel, {id              :: channel_id(),
-                  name            :: string(),
-                  topic           :: string(),
-                  owner           :: client_id(),
-                  moderators = [] :: [client_id()],
-                  clients    = [] :: [client_id()]}).
+-record(channel, {id                :: channel_id(),
+                  name       = <<>> :: binary(),
+                  topic      = <<>> :: binary(),
+                  owner             :: client_id(),
+                  moderators = []   :: [client_id()],
+                  clients    = []   :: [client_id()]}).
 
--record(client, {id               :: client_id(),
-                 name             :: string(),
-                 joined           :: calendar:time(),
-                 channels    = [] :: [channel_id()],
-                 protocol         :: socket_connection()}).
+-record(client, {id             :: client_id(),
+                 name    = <<>> :: binary(),
+                 joined         :: calendar:time(),
+                 channels = []  :: [channel_id()],
+                 protocol       :: socket_connection()}).
 
 %%%===================================================================
 %%% Types

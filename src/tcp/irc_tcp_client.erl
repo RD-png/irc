@@ -33,7 +33,7 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, _Opts = []) ->
   {ok, Socket} = ranch:handshake(Ref),
-  State = irc_client:register("test", Socket),
+  State = irc_client:register(<<"test">>, Socket),
   loop(Socket, Transport, State).
 
 %%%===================================================================
@@ -43,17 +43,36 @@ init(Ref, Transport, _Opts = []) ->
 loop(Socket, Transport, State) ->
   case Transport:recv(Socket, 0, ?SOCKET_TIMEOUT) of
     {ok, Packet} ->
-      Response = handle(Packet),
-      Transport:send(Socket, Response),
-      loop(Socket, Transport, State);
+      CleanPacket = re:replace(Packet, "[\r\n]$", "", [global]),
+      NewState = case handle(CleanPacket, State) of
+                   {ok, HandleState} ->
+                     HandleState;
+                   {Response, HandleState} ->
+                     Transport:send(Socket, Response),
+                     HandleState
+                 end,
+      loop(Socket, Transport, NewState);
     {error, timeout} ->
       Transport:send(Socket, ?TIMEOUT_MSG),
       irc_client:unregister(State#client.id);
     {error, Reason} ->
-      lager:err("TCP Client '~p' exited with reason '~p'",
-                [State#client.protocol, Reason])
+      lager:error("TCP Client '~p' exited with reason '~p'",
+                  [State#client.protocol, Reason])
   end,
   ok = Transport:close(Socket).
 
-handle(Packet) ->
-  Packet.
+handle(<<"create_channel! ", ChannelName/binary>>,
+       #client{id = ClientID, channels = Channels} = State) ->
+
+  case irc_channel:create(ChannelName, ClientID) of
+    {ok, ChannelID} ->
+      NewChannels = [ChannelID | Channels],
+      Response = ?CREATED_CHANNEL(ChannelName),
+      {Response, State#client{channels = NewChannels}};
+    {error, Err} ->
+      {Err, State}
+  end;
+handle(<<"close_channel! ", _Name/binary>>, State) ->
+  {"TEST", State};
+handle(Packet, State) ->
+  {?INVALID_COMMAND(Packet), State}.

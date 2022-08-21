@@ -21,7 +21,7 @@
 %%%===================================================================
 
 -spec register(Name, Protocol) -> Client when
-    Name     :: string(),
+    Name     :: binary(),
     Protocol :: socket_connection(),
     Client   :: client().
 register(Name, Protocol) ->
