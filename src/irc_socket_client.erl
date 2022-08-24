@@ -17,14 +17,17 @@
 %%% API
 %%%===================================================================
 
--spec create_channel(ChannelName, OwnerID) -> Result when
-    ChannelName :: binary(),
+-spec create_channel(ChannelName, OwnerID) -> ClientRes when
+    ChannelName :: channel_name(),
     OwnerID     :: client_id(),
-    Result      :: channel_id().
+    ClientRes   :: {ok, io_lib:chars()} | {error, io_lib:chars()}.
 create_channel(ChannelName, OwnerID) ->
   case irc_channel:create(ChannelName, OwnerID) of
-    {ok, ChannelID} ->
-      {ok, ChannelID};
-    {error, channel_already_registered} = Err ->
-      Err
+    ok ->
+      Response = io_lib:format("Channel '~p' created~n", [ChannelName]),
+      {ok, Response};
+    channel_already_registered ->
+      ErrResponse = io_lib:format("Channel '~p' already registered~n", 
+                                  [ChannelName]),
+      {error, ErrResponse}
   end.

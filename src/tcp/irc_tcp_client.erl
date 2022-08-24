@@ -58,19 +58,18 @@ loop(Socket, Transport, State) ->
       irc_client:unregister(State#client.id);
     {error, Reason} ->
       lager:error("TCP Client '~p' exited with reason '~p'",
-                  [State#client.protocol, Reason])
+                  [State#client.id, Reason])
   end,
   ok = Transport:close(Socket).
 
 handle(<<"create_channel! ", ChannelName/binary>>,
        #client{id = ClientID, channels = Channels} = State) ->
   case irc_socket_client:create_channel(ChannelName, ClientID) of
-    {ok, ChannelID} ->
-      NewChannels = [ChannelID | Channels],
-      Response = ?CREATED_CHANNEL(ChannelName),
+    {ok, Response} ->
+      NewChannels = [ChannelName | Channels],      
       {Response, State#client{channels = NewChannels}};
-    {error, Err} ->
-      {Err, State}
+    {error, ErrResponse} ->
+      {ErrResponse, State}
   end;
 handle(<<"close_channel! ", _Name/binary>>, State) ->
   {"TEST", State};

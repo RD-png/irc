@@ -13,18 +13,32 @@
 %% API
 -export([create/2]).
 
+-define(CHANNEL_TABLE, channel).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 
--spec create(ChannelName, OwnerID) -> ChannelID when
-    ChannelName :: binary(),
+-spec create(ChannelName, OwnerID) -> Result when
+    ChannelName :: channel_name(),
     OwnerID     :: client_id(),
-    ChannelID   :: channel_id().
+    Result      :: ok | channel_already_registered.
 create(ChannelName, OwnerID) ->
-  Channel = #channel{id = uuid:uuid1(),
-                     name = ChannelName,
-                     owner = OwnerID,
-                     clients = [OwnerID]},
-  mnesia:dirty_write(Channel),
-  {ok, Channel#channel.id}.
+  case is_registered_channel(ChannelName) of
+    false ->
+      Channel = #channel{name    = ChannelName,
+                         owner   = OwnerID,
+                         clients = [OwnerID]},
+      mnesia:dirty_write(Channel);
+    true ->
+      channel_already_registered
+  end.
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+
+-spec is_registered_channel(ChannelName) -> boolean() when
+    ChannelName :: channel_name().
+is_registered_channel(ChannelName) ->
+  [] /= mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}).
