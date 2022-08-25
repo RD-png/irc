@@ -7,7 +7,8 @@
 %%% Created : 18 Aug 2022 by Ryan User <ryan@nixos-laptop>
 %%%-------------------------------------------------------------------
 -module(irc_client).
-
+-author("ryandenby").
+ 
 -include("irc.hrl").
 
 %% API

@@ -12,7 +12,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/0,
+         get_spec/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -31,6 +32,14 @@
 start_link() ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+get_spec() ->
+  #{id => ?MODULE,
+    start => {?MODULE, start_link, []},
+    restart => permanent,
+    shutdown => 5000,
+    type => worker,
+    modules => [?MODULE]}.
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -45,13 +54,13 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
   {noreply, State}.
 
-handle_info({udp, Socket, Address, Port, _Msg} = Packet, State) ->
-  {NewState, Client} = case is_registered_client({Address, Port}, State) of
+handle_info({udp, Socket, Host, Port, _Msg} = Packet, State) ->
+  {NewState, Client} = case is_registered_client({Host, Port}, State) of
                          {_Key, ClientPID}->
                            {State, ClientPID};
                          false ->
-                           {ok, ClientPID} = irc_udp_client_sup:create_client(Socket, Address, Port),
-                           UpdatedState = register_client({Address, Port}, ClientPID, State),
+                           {ok, ClientPID} = irc_udp_client_sup:create_client(Socket, Host, Port),
+                           UpdatedState = register_client({Host, Port}, ClientPID, State),
                            {UpdatedState, ClientPID}
                          end,
   Client ! Packet,

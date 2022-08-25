@@ -7,13 +7,14 @@
 %%% Created : 21 Aug 2022 by Ryan User <ryan@nixos-laptop>
 %%%-------------------------------------------------------------------
 -module(irc_socket_client).
+-author("ryandenby").
 
 -include("irc.hrl").
 
 %% API
 -export([create_channel/2]).
 
-%%%=============================p======================================
+%%%===================================================================
 %%% API
 %%%===================================================================
 
@@ -27,7 +28,7 @@ create_channel(ChannelName, OwnerID) ->
       Response = io_lib:format("Channel '~p' created~n", [ChannelName]),
       {ok, Response};
     channel_already_registered ->
-      ErrResponse = io_lib:format("Channel '~p' already registered~n", 
+      ErrResponse = io_lib:format("Channel '~p' already registered~n",
                                   [ChannelName]),
       {error, ErrResponse}
   end.

@@ -43,7 +43,7 @@ init(Ref, Transport, _Opts = []) ->
 loop(Socket, Transport, State) ->
   case Transport:recv(Socket, 0, ?SOCKET_TIMEOUT) of
     {ok, Packet} ->
-      CleanPacket = re:replace(Packet, "[\r\n]$", "", 
+      CleanPacket = re:replace(Packet, "[\r\n]$", "",
                                [global, {return, binary}]),
       NewState = case handle(CleanPacket, State) of
                    {ok, HandleState} ->
@@ -66,7 +66,7 @@ handle(<<"create_channel! ", ChannelName/binary>>,
        #client{id = ClientID, channels = Channels} = State) ->
   case irc_socket_client:create_channel(ChannelName, ClientID) of
     {ok, Response} ->
-      NewChannels = [ChannelName | Channels],      
+      NewChannels = [ChannelName | Channels],
       {Response, State#client{channels = NewChannels}};
     {error, ErrResponse} ->
       {ErrResponse, State}

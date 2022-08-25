@@ -7,26 +7,33 @@
 %%% Created :  7 Aug 2022 by Ryan User <ryan@nixos-desktop>
 %%%-------------------------------------------------------------------
 -module(irc_client_sup).
+-author("ryandenby").
 
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/0,
+         get_spec/0]).
 
 %% Supervisor callbacks
 -export([init/1]).
 
--define(SERVER,             ?MODULE).
--define(IRC_UDP_MANAGER,    irc_udp_manager).
--define(IRC_UDP_CLIENT_SUP, irc_udp_client_sup).
--define(IRC_TCP_CLIENT,     irc_tcp_client).
+-define(SERVER, ?MODULE).
 
 %%%===================================================================
-%%% API functions
+%%% API
 %%%===================================================================
 
 start_link() ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+
+get_spec() ->
+  #{id => ?MODULE,
+    start => {?MODULE, start_link, []},
+    restart => permanent,
+    shutdown => 5000,
+    type => supervisor,
+    modules => [?MODULE]}.
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -37,8 +44,8 @@ init([]) ->
   SupFlags = #{strategy => one_for_one,
                intensity => 1,
                period => 5},
-  ChildSpec = [irc_udp_manager_spec(),
-               irc_udp_client_sup_spec()],
+  ChildSpec = [irc_udp_manager:get_spec(),
+               irc_udp_client_sup:get_spec()],
 
   {ok, {SupFlags, ChildSpec}}.
 
@@ -47,24 +54,9 @@ init([]) ->
 %%%===================================================================
 
 irc_ranch_tcp_start_acceptor_pool() ->
+  TransportOpts = #{num_acceptors => 50,
+                    socket_opts => [{port, 8080}]},
   {ok, _} = ranch:start_listener(irc_tcp_acceptors,
                                  ranch_tcp,
-                                 #{num_acceptors => 50,
-                                   socket_opts => [{port, 8080}]},
-                                 ?IRC_TCP_CLIENT, []).
-
-irc_udp_manager_spec() ->
-  #{id => ?IRC_UDP_MANAGER,
-    start => {?IRC_UDP_MANAGER, start_link, []},
-    restart => permanent,
-    shutdown => 5000,
-    type => worker,
-    modules => [?IRC_UDP_MANAGER]}.
-
-irc_udp_client_sup_spec() ->
-  #{id => ?IRC_UDP_CLIENT_SUP,
-    start => {?IRC_UDP_CLIENT_SUP, start_link, []},
-    restart => permanent,
-    shutdown => 5000,
-    type => worker,
-    modules => [?IRC_UDP_CLIENT_SUP]}.
+                                 TransportOpts,
+                                 irc_tcp_client, []).

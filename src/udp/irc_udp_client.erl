@@ -7,6 +7,7 @@
 %%% Created :  6 Aug 2022 by Ryan User <ryan@nixos-desktop>
 %%%-------------------------------------------------------------------
 -module(irc_udp_client).
+-author("ryandenby").
 
 -behaviour(gen_server).
 
@@ -14,7 +15,8 @@
 -include("irc_socket.hrl").
 
 %% API
--export([start_link/3]).
+-export([start_link/3,
+         get_spec/0]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -24,8 +26,6 @@
          terminate/2,
          code_change/3]).
 
--define(SERVER, ?MODULE).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -33,12 +33,20 @@
 start_link(Socket, Host, Port) ->
   gen_server:start_link(?MODULE, [{Socket, Host, Port}], []).
 
+get_spec() ->
+  #{id => ?MODULE,
+    start => {?MODULE, start_link, []},
+    restart => permanent,
+    shutdown => 5000,
+    type => worker,
+    modules => [?MODULE]}.
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
 init([Protocol]) ->
-  Client = irc_client:register("test2", Protocol),
+  Client = irc_client:register(<<"test2">>, Protocol),
   {ok, Client}.
 
 handle_call(_Request, _From, State) ->

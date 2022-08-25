@@ -7,6 +7,7 @@
 %%% Created : 19 Aug 2022 by Ryan User <ryan@nixos-laptop>
 %%%-------------------------------------------------------------------
 -module(irc_channel).
+-author("ryandenby").
 
 -include("irc.hrl").
 
@@ -38,7 +39,5 @@ create(ChannelName, OwnerID) ->
 %%% Internal functions
 %%%===================================================================
 
--spec is_registered_channel(ChannelName) -> boolean() when
-    ChannelName :: channel_name().
 is_registered_channel(ChannelName) ->
   [] /= mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}).

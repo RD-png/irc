@@ -24,7 +24,9 @@
 -type client_id()         :: uuid:uuid().
 -type socket_connection() :: tcp_connection() | udp_connection().
 -type tcp_connection()    :: inet:socket().
--type udp_connection()    :: {inet:socket(), inet:ip_address(), inet:port_number()}.
+-type udp_connection()    :: {inet:socket(), 
+                              inet:ip_address() | inet:hostname(), 
+                              inet:port_number()}.
 
 %%%===================================================================
 %%% Macros

@@ -13,29 +13,36 @@
 
 %% API
 -export([start_link/0,
+         get_spec/0,
          create_client/3]).
 
 %% Supervisor callbacks
 -export([init/1]).
 
--define(SERVER,         ?MODULE).
--define(IRC_UDP_CLIENT, irc_udp_client).
-
+-define(SERVER, ?MODULE).
 
 %%%===================================================================
 %%% API functions
 %%%===================================================================
 
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts the supervisor
-%% @end
-%%--------------------------------------------------------------------
 start_link() ->
   supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
-create_client(Socket, Address, Port) ->
-  supervisor:start_child(?MODULE, [Socket, Address, Port]).
+get_spec() ->
+  #{id => ?MODULE,
+    start => {?MODULE, start_link, []},
+    restart => permanent,
+    shutdown => 5000,
+    type => worker,
+    modules => [?MODULE]}.
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Dynamically spawn irc_udp_client process.
+%% @end
+%%--------------------------------------------------------------------
+create_client(Socket, Host, Port) when is_port(Port) ->
+  supervisor:start_child(?MODULE, [Socket, Host, Port]).
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -45,12 +52,7 @@ init([]) ->
   SupFlags = #{strategy => simple_one_for_one,
                intensity => 1,
                period => 5},
-  ChildSpec = [#{id => ?IRC_UDP_CLIENT,
-                 start => {?IRC_UDP_CLIENT, start_link, []},
-                 restart => permanent,
-                 shutdown => 5000,
-                 type => worker,
-                 modules => [?IRC_UDP_CLIENT]}],
+  ChildSpec = [irc_udp_client:get_spec()],
 
   {ok, {SupFlags, ChildSpec}}.
 
