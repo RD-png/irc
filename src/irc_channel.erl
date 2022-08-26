@@ -12,7 +12,8 @@
 -include("irc.hrl").
 
 %% API
--export([create/2]).
+-export([create/2,
+         close/2]).
 
 -define(CHANNEL_TABLE, channel).
 
@@ -35,9 +36,26 @@ create(ChannelName, OwnerID) ->
       channel_already_registered
   end.
 
+-spec close(ChannelName, OwnerID) -> Result when
+    ChannelName :: channel_name(),
+    OwnerID     :: client_id(),
+    Result      :: ok | non_channel_owner | channel_not_registered.
+close(ChannelName, OwnerID) ->
+  case fetch_channel(ChannelName) of
+    [Channel] when OwnerID =:= Channel#channel.owner ->
+      mnesia:dirty_delete_object(Channel);
+    [_Channel] ->
+      non_channel_owner;
+    _NotRegistered ->
+      channel_not_registered
+  end.
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
 is_registered_channel(ChannelName) ->
   [] /= mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}).
+
+fetch_channel(ChannelName) ->
+  mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}).

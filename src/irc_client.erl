@@ -8,7 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(irc_client).
 -author("ryandenby").
- 
+
 -include("irc.hrl").
 
 %% API
