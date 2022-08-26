@@ -57,7 +57,9 @@ handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({udp, Socket, Host, Port, Packet}, State) ->
-  NewState = case handle(Packet, State) of
+  CleanPacket = re:replace(Packet, "[\r\n]$", "",
+                           [global, {return, binary}]),
+  NewState = case irc_socket_client:handle(CleanPacket, State) of
                {ok, HandleState} ->
                  HandleState;
                {Response, HandleState}->
@@ -74,12 +76,3 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
-
-handle(<<"create_channel! ", _ChannelName/binary>>, State) ->
-  {"test", State};
-handle(Packet, State) ->
-  {?INVALID_COMMAND(Packet), State}.

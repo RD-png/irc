@@ -45,33 +45,19 @@ loop(Socket, Transport, State) ->
     {ok, Packet} ->
       CleanPacket = re:replace(Packet, "[\r\n]$", "",
                                [global, {return, binary}]),
-      NewState = case handle(CleanPacket, State) of
+      NewState = case irc_socket_client:handle(CleanPacket, State) of
                    {ok, HandleState} ->
                      HandleState;
-                   {Response, HandleState} ->
+                   {Response, NewHandleState}->
                      Transport:send(Socket, Response),
-                     HandleState
+                     NewHandleState
                  end,
       loop(Socket, Transport, NewState);
     {error, timeout} ->
       Transport:send(Socket, ?TIMEOUT_MSG),
       irc_client:unregister(State#client.id);
     {error, Reason} ->
-      lager:error("TCP Client '~p' exited with reason '~p'",
-                  [State#client.id, Reason])
+      lager:info("TCP Client '~p' exited with reason '~p'",
+                 [State#client.id, Reason])
   end,
   ok = Transport:close(Socket).
-
-handle(<<"create_channel! ", ChannelName/binary>>,
-       #client{id = ClientID, channels = Channels} = State) ->
-  case irc_socket_client:create_channel(ChannelName, ClientID) of
-    {ok, Response} ->
-      NewChannels = [ChannelName | Channels],
-      {Response, State#client{channels = NewChannels}};
-    {error, ErrResponse} ->
-      {ErrResponse, State}
-  end;
-handle(<<"close_channel! ", _Name/binary>>, State) ->
-  {"TEST", State};
-handle(Packet, State) ->
-  {?INVALID_COMMAND(Packet), State}.

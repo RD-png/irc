@@ -41,7 +41,7 @@ get_spec() ->
 %% Dynamically spawn irc_udp_client process.
 %% @end
 %%--------------------------------------------------------------------
-create_client(Socket, Host, Port) when is_port(Port) ->
+create_client(Socket, Host, Port) ->
   supervisor:start_child(?MODULE, [Socket, Host, Port]).
 
 %%%===================================================================
