@@ -13,7 +13,8 @@
 
 %% API
 -export([start_link/0,
-         get_spec/0]).
+         get_spec/0,
+         unregister/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -40,6 +41,11 @@ get_spec() ->
     type => worker,
     modules => [?MODULE]}.
 
+-spec unregister(ClientPID) -> ok when
+    ClientPID :: pid().
+unregister(ClientPID) ->
+  gen_server:cast(?MODULE, {unregister, ClientPID}).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -51,6 +57,9 @@ init([]) ->
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
+handle_cast({unregister, ClientPID}, State) ->
+  UpdatedState = do_unregister(ClientPID, State),
+  {noreply, UpdatedState};
 handle_cast(_Request, State) ->
   {noreply, State}.
 
@@ -60,7 +69,7 @@ handle_info({udp, Socket, Host, Port, _Msg} = Packet, State) ->
                            {State, ClientPID};
                          false ->
                            {ok, ClientPID} = irc_udp_client_sup:create_client(Socket, Host, Port),
-                           UpdatedState = register_client({Host, Port}, ClientPID, State),
+                           UpdatedState = register({Host, Port}, ClientPID, State),
                            {UpdatedState, ClientPID}
                          end,
   Client ! Packet,
@@ -82,8 +91,12 @@ start_udp() ->
   Port = irc_app:get_env(udp_port),
   gen_udp:open(Port, [{mode, binary}, {reuseaddr, true}]).
 
-register_client(Key, ClientPID, State) ->
+register(Key, ClientPID, State) ->
+  link(ClientPID),
   [{Key, ClientPID} | State].
 
 is_registered_client(Key, State) ->
   lists:keyfind(Key, 1, State).
+
+do_unregister(ClientPID, State) ->
+  lists:delete(ClientPID, State).

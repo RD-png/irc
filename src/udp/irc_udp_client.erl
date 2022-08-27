@@ -72,6 +72,8 @@ handle_info(Info, State) ->
   {noreply, State}.
 
 terminate(_Reason, _State) ->
+  ClientPID = self(),
+  irc_udp_manager:unregister(ClientPID),
   ok.
 
 code_change(_OldVsn, State, _Extra) ->
