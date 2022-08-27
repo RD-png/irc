@@ -10,39 +10,70 @@
 
 %% API
 -export([start/0,
-         stop/0]).
-
--define(MNESIA_GENERIC_OPTS, [{type, ordered_set}]).
+         stop/0,
+         create_channel/2,
+         close_channel/2]).
 
 %%%-------------------------------------------------------------------
 %% API
 %%%-------------------------------------------------------------------
 
+-spec start() -> ok.
 start() ->
-  create_tables().
+  ok = irc_client:create_mnesia_table(),
+  ok = irc_channel:create_mnesia_table().
 
+-spec stop() -> stopped | {error, term()}.
 stop() ->
   mnesia:stop().
 
-%%%-------------------------------------------------------------------
-%% Internal functions
-%%%-------------------------------------------------------------------
+-spec create_channel(ChannelName, ClientID) -> Result when
+    ChannelName :: channel_name(),
+    ClientID    :: client_id(),
+    Result      :: ok
+                 | channel_already_registered
+                 | client_not_registered.
+create_channel(ChannelName, ClientID) ->
+  case irc_client:fetch(ClientID) of
+    #client{owned = Owned, subscribed = Subscribed} = Client ->
+      case irc_channel:create(ChannelName, ClientID) of
+        ok ->
+          UpdatedClient = Client#client{owned      = [ChannelName | Owned],
+                                        subscribed = [ChannelName | Subscribed]},
+          irc_client:update(UpdatedClient);
+        channel_already_registered = Err ->
+          Err
+      end;
+    _ClientNotRegistered ->
+      client_not_registered
+  end.
 
-create_tables() ->
-  mnesia_create_client_table(),
-  mnesia_create_channel_table().
+-spec close_channel(ChannelName, ClientID) -> Result when
+    ChannelName :: channel_name(),
+    ClientID    :: client_id(),
+    Result      :: ok
+                 | client_not_registered
+                 | channel_non_owner
+                 | channel_not_registered.
+close_channel(ChannelName, ClientID) ->
+  case irc_channel:fetch(ChannelName) of
+    #channel{owner = OwnerID} = Channel when ClientID =:= OwnerID ->
+      case irc_client:fetch(ClientID) of
+        #client{owned = Owned, subscribed = Subscribed} = Client ->
+          UpdatedClient =
+            Client#client{owned      = lists:delete(ChannelName, Owned),
+                          subscribed = lists:delete(ChannelName, Subscribed)},
+          irc_client:update(UpdatedClient),
+          irc_channel:unregister(Channel);
+        _ClientNotRegistered ->
+          client_not_registered
+      end;
+    #channel{} = _Channel ->
+      channel_non_owner;
+    _ChannelNotRegistered ->
+      channel_not_registered
+  end.
 
-mnesia_create_client_table() ->
-   {atomic, ok} = mnesia:create_table(
-                   client,
-                   [{attributes, record_info(fields, client)}]
-                   ++ ?MNESIA_GENERIC_OPTS
-                  ).
-
-
-mnesia_create_channel_table() ->
-   {atomic, ok} = mnesia:create_table(
-                   channel,
-                   [{attributes, record_info(fields, channel)}]
-                   ++ ?MNESIA_GENERIC_OPTS
-                  ).
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================

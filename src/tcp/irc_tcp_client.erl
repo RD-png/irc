@@ -19,6 +19,9 @@
 %% ranch_protocol callbacks
 -export([init/3]).
 
+-record(state, {id       :: client_id(),
+                protocol :: tcp_connection()}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -33,31 +36,29 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, _Opts = []) ->
   {ok, Socket} = ranch:handshake(Ref),
-  State = irc_client:register(<<"test">>, Socket),
-  loop(Socket, Transport, State).
+  ClientID = irc_client:register(<<"test">>, Socket),
+  loop(Socket, Transport, #state{id = ClientID, protocol = Socket}).
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-loop(Socket, Transport, State) ->
+loop(Socket, Transport, #state{id = ClientID} = State) ->
   case Transport:recv(Socket, 0, ?SOCKET_TIMEOUT) of
     {ok, Packet} ->
       CleanPacket = re:replace(Packet, "[\r\n]$", "",
                                [global, {return, binary}]),
-      NewState = case irc_socket_client:handle(CleanPacket, State) of
-                   {ok, HandleState} ->
-                     HandleState;
-                   {Response, NewHandleState}->
-                     Transport:send(Socket, Response),
-                     NewHandleState
-                 end,
-      loop(Socket, Transport, NewState);
+      case irc_socket_client:handle(CleanPacket, ClientID) of
+        ok ->
+          ok;
+        Response ->
+          Transport:send(Socket, Response)
+      end,
+      loop(Socket, Transport, State);
     {error, timeout} ->
       Transport:send(Socket, ?TIMEOUT_MSG),
-      irc_client:unregister(State#client.id);
+      irc_client:unregister(ClientID);
     {error, Reason} ->
-      lager:info("TCP Client '~p' exited with reason '~p'",
-                 [State#client.id, Reason])
+      lager:info("TCP Client '~p' exited with reason '~p'", [ClientID, Reason])
   end,
   ok = Transport:close(Socket).

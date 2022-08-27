@@ -26,6 +26,9 @@
          terminate/2,
          code_change/3]).
 
+-record(state, {id       :: client_id(),
+                protocol :: udp_connection()}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -46,8 +49,8 @@ get_spec() ->
 %%%===================================================================
 
 init([Protocol]) ->
-  Client = irc_client:register(<<"test2">>, Protocol),
-  {ok, Client}.
+  ClientID = irc_client:register(<<"test2">>, Protocol),
+  {ok, #state{id = ClientID, protocol = Protocol}}.
 
 handle_call(_Request, _From, State) ->
   Reply = ok,
@@ -56,17 +59,16 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
   {noreply, State}.
 
-handle_info({udp, Socket, Host, Port, Packet}, State) ->
+handle_info({udp, Socket, Host, Port, Packet}, #state{id = ClientID} = State) ->
   CleanPacket = re:replace(Packet, "[\r\n]$", "",
                            [global, {return, binary}]),
-  NewState = case irc_socket_client:handle(CleanPacket, State) of
-               {ok, HandleState} ->
-                 HandleState;
-               {Response, HandleState}->
-                 gen_udp:send(Socket, Host, Port, Response),
-                 HandleState
-             end,
-  {noreply, NewState};
+  case irc_socket_client:handle(CleanPacket, ClientID) of
+    ok ->
+      ok;
+    Response ->
+      gen_udp:send(Socket, Host, Port, Response)
+  end,
+  {noreply, State};
 handle_info(Info, State) ->
   lager:error("Received unhandled message ~p", [Info]),
   {noreply, State}.

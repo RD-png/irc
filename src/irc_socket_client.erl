@@ -22,7 +22,7 @@
 -spec handle(Packet, State) -> Response when
     Packet   :: binary(),
     State    :: client(),
-    Response :: {ok | Msg, State},
+    Response :: ok | Msg,
     Msg      :: io_lib:chars().
 handle(Packet, State) ->
   do_handle(Packet, State).
@@ -31,33 +31,23 @@ handle(Packet, State) ->
 %%% Internal functions
 %%%===================================================================
 
-do_handle(<<"create_channel! ", ChannelName/binary>>,
-          #client{id = OwnerID, channels = Channels} = State) ->
-  case irc_channel:create(ChannelName, OwnerID) of
+do_handle(<<"create_channel! ", ChannelName/binary>>, ClientID) ->
+  case irc_mnesia:create_channel(ChannelName, ClientID) of
     ok ->
-      Response = io_lib:format("Channel '~p' created~n", [ChannelName]),
-      NewChannels = [ChannelName | Channels],
-      {Response, State#client{channels = NewChannels}};
+      io_lib:format("Channel '~p' created~n", [ChannelName]);
     channel_already_registered ->
-      ErrResponse = io_lib:format("Channel '~p' already registered~n",
-                                  [ChannelName]),
-      {ErrResponse, State}
+      io_lib:format("Channel '~p' already registered~n", [ChannelName]);
+    client_not_registered ->
+      io_lib:format("Client '~p' not registered~n", [ClientID])
   end;
-do_handle(<<"close_channel! ", ChannelName/binary>>,
-          #client{id = OwnerID, channels = Channels} = State) ->
-  case irc_channel:close(ChannelName, OwnerID) of
+do_handle(<<"close_channel! ", ChannelName/binary>>, ClientID) ->
+  case irc_mnesia:close_channel(ChannelName, ClientID) of
     ok ->
-      Response = io_lib:format("Channel '~p' closed~n", [ChannelName]),
-      NewChannels = lists:delete(ChannelName, Channels),
-      {Response, State#client{channels = NewChannels}};
+      io_lib:format("Channel '~p' closed~n", [ChannelName]);
     channel_not_registered ->
-      ErrResponse = io_lib:format("Channel '~p' not registered~n",
-                                  [ChannelName]),
-      {ErrResponse, State};
-    non_channel_owner ->
-      ErrResponse = io_lib:format("Not owner of channel '~p'~n",
-                                  [ChannelName]),
-      {ErrResponse, State}
+      io_lib:format("Channel '~p' not registered~n", [ChannelName]);
+    channel_non_owner ->
+      io_lib:format("Not owner of channel '~p'~n", [ChannelName])
   end;
 do_handle(Packet, State) ->
   {?INVALID_COMMAND(Packet), State}.

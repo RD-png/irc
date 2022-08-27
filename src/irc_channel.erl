@@ -12,8 +12,10 @@
 -include("irc.hrl").
 
 %% API
--export([create/2,
-         close/2]).
+-export([create_mnesia_table/0,
+         create/2,
+         fetch/1,
+         unregister/1]).
 
 -define(CHANNEL_TABLE, channel).
 
@@ -21,41 +23,51 @@
 %%% API
 %%%===================================================================
 
--spec create(ChannelName, OwnerID) -> Result when
+-spec create_mnesia_table() -> ok.
+create_mnesia_table() ->
+  {atomic, ok} =
+    mnesia:create_table(channel,
+                        [{attributes, record_info(fields, channel)},
+                         {type, ordered_set}]),
+  ok.
+
+-spec create(ChannelName, ClientID) -> Result when
     ChannelName :: channel_name(),
-    OwnerID     :: client_id(),
+    ClientID    :: client_id(),
     Result      :: ok | channel_already_registered.
-create(ChannelName, OwnerID) ->
-  case is_registered_channel(ChannelName) of
+create(ChannelName, ClientID) ->
+  case is_registered(ChannelName) of
     false ->
       Channel = #channel{name    = ChannelName,
-                         owner   = OwnerID,
-                         clients = [OwnerID]},
+                         owner   = ClientID,
+                         clients = [ClientID]},
       mnesia:dirty_write(Channel);
     true ->
       channel_already_registered
   end.
 
--spec close(ChannelName, OwnerID) -> Result when
+-spec unregister(Channel) -> ok | false when
+    Channel :: channel().
+unregister(Channel) when is_record(Channel, channel) ->
+  mnesia:dirty_delete_object(Channel);
+unregister(_Channel) ->
+  false.
+
+-spec fetch(ChannelName) -> Result when
     ChannelName :: channel_name(),
-    OwnerID     :: client_id(),
-    Result      :: ok | non_channel_owner | channel_not_registered.
-close(ChannelName, OwnerID) ->
-  case fetch_channel(ChannelName) of
-    [Channel] when OwnerID =:= Channel#channel.owner ->
-      mnesia:dirty_delete_object(Channel);
-    [_Channel] ->
-      non_channel_owner;
-    _NotRegistered ->
-      channel_not_registered
+    Result      :: Channel | none,
+    Channel     :: channel().
+fetch(ChannelName) ->
+  case mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}) of
+    [Channel] ->
+      Channel;
+    [] ->
+      none
   end.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-is_registered_channel(ChannelName) ->
+is_registered(ChannelName) ->
   [] /= mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}).
-
-fetch_channel(ChannelName) ->
-  mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}).

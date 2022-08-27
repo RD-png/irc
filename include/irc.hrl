@@ -11,7 +11,8 @@
 -record(client, {id                 :: client_id(),
                  name        = <<>> :: binary(),
                  joined             :: calendar:time(),
-                 channels    = []   :: [channel_name()],
+                 subscribed  = []   :: [channel_name()],
+                 owned       = []   :: [channel_name()],
                  protocol           :: socket_connection()}).
 
 %%%===================================================================
