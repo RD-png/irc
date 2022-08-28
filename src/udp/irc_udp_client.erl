@@ -39,7 +39,7 @@ start_link(Socket, Host, Port) ->
 get_spec() ->
   #{id => ?MODULE,
     start => {?MODULE, start_link, []},
-    restart => permanent,
+    restart => temporary,
     shutdown => 5000,
     type => worker,
     modules => [?MODULE]}.
@@ -49,6 +49,7 @@ get_spec() ->
 %%%===================================================================
 
 init([Protocol]) ->
+  process_flag(trap_exit, true),
   ClientID = irc_client:register(<<"test2">>, Protocol),
   {ok, #state{id = ClientID, protocol = Protocol}}.
 
@@ -69,14 +70,14 @@ handle_info({udp, Socket, Host, Port, Packet}, #state{id = ClientID} = State) ->
       gen_udp:send(Socket, Host, Port, Response)
   end,
   {noreply, State};
+handle_info({'EXIT', _Pid, _Reason}, State) ->
+  {stop, normal, State};
 handle_info(Info, State) ->
   lager:error("Received unhandled message ~p", [Info]),
   {noreply, State}.
 
-terminate(_Reason, _State) ->
-  ClientPID = self(),
-  irc_udp_manager:unregister(ClientPID),
-  ok.
+terminate(_Reason, #state{protocol = {_Socket, Host, Port}} = _State) ->
+  irc_udp_manager:unregister({Host, Port}).
 
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.

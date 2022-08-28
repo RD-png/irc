@@ -52,7 +52,7 @@ update(Client) when is_record(Client, client) ->
 -spec unregister(ClientID) -> ok when
     ClientID :: client().
 unregister(ClientID) ->
-  ok = mnesia:dirty_delete({?CLIENT_TABLE, ClientID}).
+  mnesia:dirty_delete({?CLIENT_TABLE, ClientID}).
 
 -spec fetch(ClientID) -> Result when
     ClientID :: client_id(),

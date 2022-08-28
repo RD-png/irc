@@ -26,6 +26,9 @@
 
 -define(SERVER, ?MODULE).
 
+-type connection_id() :: {inet:hostname() | inet:ip_address(),
+                          inet:port_number()}.
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -41,10 +44,10 @@ get_spec() ->
     type => worker,
     modules => [?MODULE]}.
 
--spec unregister(ClientPID) -> ok when
-    ClientPID :: pid().
-unregister(ClientPID) ->
-  gen_server:cast(?MODULE, {unregister, ClientPID}).
+-spec unregister(ConnectionKey) -> ok when
+    ConnectionKey :: connection_id().
+unregister(ConnectionKey) ->
+  gen_server:cast(?MODULE, {unregister, ConnectionKey}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -57,21 +60,21 @@ init([]) ->
 handle_call(_Request, _From, State) ->
   {reply, ok, State}.
 
-handle_cast({unregister, ClientPID}, State) ->
-  UpdatedState = do_unregister(ClientPID, State),
+handle_cast({unregister, ConnectionKey}, State) ->
+  UpdatedState = do_unregister(ConnectionKey, State),
   {noreply, UpdatedState};
 handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({udp, Socket, Host, Port, _Msg} = Packet, State) ->
-  {NewState, Client} = case is_registered_client({Host, Port}, State) of
+  {NewState, Client} = case is_registered({Host, Port}, State) of
                          {_Key, ClientPID}->
                            {State, ClientPID};
                          false ->
                            {ok, ClientPID} = irc_udp_client_sup:create_client(Socket, Host, Port),
                            UpdatedState = register({Host, Port}, ClientPID, State),
                            {UpdatedState, ClientPID}
-                         end,
+                       end,
   Client ! Packet,
   {noreply, NewState};
 handle_info(_Info, State) ->
@@ -84,7 +87,7 @@ code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
 %%%===================================================================
-%%% Internal Functions
+%%% Internal functions
 %%%===================================================================
 
 start_udp() ->
@@ -92,11 +95,10 @@ start_udp() ->
   gen_udp:open(Port, [{mode, binary}, {reuseaddr, true}]).
 
 register(Key, ClientPID, State) ->
-  link(ClientPID),
   [{Key, ClientPID} | State].
 
-is_registered_client(Key, State) ->
+is_registered(Key, State) ->
   lists:keyfind(Key, 1, State).
 
-do_unregister(ClientPID, State) ->
-  lists:delete(ClientPID, State).
+do_unregister(ConnectionKey, State) ->
+  lists:keydelete(ConnectionKey, 1, State).

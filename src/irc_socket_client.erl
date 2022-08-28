@@ -49,5 +49,8 @@ do_handle(<<"close_channel! ", ChannelName/binary>>, ClientID) ->
     channel_non_owner ->
       io_lib:format("Not owner of channel '~p'~n", [ChannelName])
   end;
+do_handle(<<"exit!">>, ClientID) ->
+  erlang:exit(self(), test),
+  ok;
 do_handle(Packet, State) ->
   {?INVALID_COMMAND(Packet), State}.
