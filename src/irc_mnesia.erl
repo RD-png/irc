@@ -58,16 +58,7 @@ create_channel(ChannelName, ClientID) ->
 close_channel(ChannelName, ClientID) ->
   case irc_channel:fetch(ChannelName) of
     #channel{owner = OwnerID} = Channel when ClientID =:= OwnerID ->
-      case irc_client:fetch(ClientID) of
-        #client{owned = Owned, subscribed = Subscribed} = Client ->
-          UpdatedClient =
-            Client#client{owned      = lists:delete(ChannelName, Owned),
-                          subscribed = lists:delete(ChannelName, Subscribed)},
-          irc_client:update(UpdatedClient),
-          irc_channel:unregister(Channel);
-        _ClientNotRegistered ->
-          client_not_registered
-      end;
+      do_close_channel(Channel, ClientID);
     #channel{} = _Channel ->
       channel_non_owner;
     _ChannelNotRegistered ->
@@ -77,3 +68,15 @@ close_channel(ChannelName, ClientID) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+do_close_channel(#channel{name = ChannelName} = Channel, ClientID) ->
+  case irc_client:fetch(ClientID) of
+    #client{owned = Owned, subscribed = Subscribed} = Client ->
+      UpdatedClient =
+        Client#client{owned      = lists:delete(ChannelName, Owned),
+                      subscribed = lists:delete(ChannelName, Subscribed)},
+      irc_client:update(UpdatedClient),
+      irc_channel:unregister(Channel);
+    _ClientNotRegistered ->
+      client_not_registered
+  end.
