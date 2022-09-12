@@ -1,0 +1,25 @@
+#+TITLE: IRC
+
+Simple IRC like chat server for netcat clients
+
+* Build
+#+begin_src bash
+  make compile
+#+end_src
+
+* Run
+#+begin_src bash
+  make dev
+#+end_src
+
+* Connect
+#+begin_src bash
+  # TCP
+  netcat 127.0.0.1 8080
+
+  # UDP
+  netcat -u 127.0.0.1 8081
+
+  # Commands
+  help!
+#+end_src

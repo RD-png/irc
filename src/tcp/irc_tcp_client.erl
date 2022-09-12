@@ -36,7 +36,7 @@ start_link(Ref, Transport, Opts) ->
 
 init(Ref, Transport, _Opts = []) ->
   {ok, Socket} = ranch:handshake(Ref),
-  ClientID = irc_client:register(<<"test">>, Socket),
+  ClientID = irc_client:register(Socket),
   loop(Socket, Transport, #state{id = ClientID, protocol = Socket}).
 
 %%%===================================================================
@@ -45,6 +45,8 @@ init(Ref, Transport, _Opts = []) ->
 
 loop(Socket, Transport, #state{id = ClientID} = State) ->
   case Transport:recv(Socket, 0, ?SOCKET_TIMEOUT) of
+    {ok, <<"quit!", _Rest/binary>>} ->
+      Transport:send(Socket, ?QUIT_MSG);
     {ok, Packet} ->
       case irc_socket_client:handle(Packet, ClientID) of
         ok ->
@@ -58,4 +60,5 @@ loop(Socket, Transport, #state{id = ClientID} = State) ->
     {error, Reason} ->
       lager:info("TCP Client '~p' exited with reason '~p'", [ClientID, Reason])
   end,
+  irc_client:unregister(ClientID),
   ok = Transport:close(Socket).

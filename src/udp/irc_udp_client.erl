@@ -49,7 +49,7 @@ get_spec() ->
 %%%===================================================================
 
 init([Protocol]) ->
-  ClientID = irc_client:register(<<"test2">>, Protocol),
+  ClientID = irc_client:register(Protocol),
   {ok, #state{id = ClientID, protocol = Protocol}}.
 
 handle_call(_Request, _From, State) ->
@@ -59,6 +59,8 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
   {noreply, State}.
 
+handle_info({udp, _Socket, _Host, _Port, <<"quit!", _Rest/binary>>}, State) ->
+  {stop, normal, State};
 handle_info({udp, Socket, Host, Port, Packet}, #state{id = ClientID} = State) ->
   case irc_socket_client:handle(Packet, ClientID) of
     ok ->
@@ -74,7 +76,8 @@ handle_info(Info, State) ->
   lager:error("Received unhandled message ~p", [Info]),
   {noreply, State}.
 
-terminate(_Reason, #state{protocol = {_Socket, Host, Port}} = _State) ->
+terminate(_Reason, #state{id = ClientID, protocol = {_Socket, Host, Port}} = _State) ->
+  irc_client:unregister(ClientID),
   irc_udp_manager:unregister({Host, Port}).
 
 code_change(_OldVsn, State, _Extra) ->

@@ -36,20 +36,30 @@ handle(Packet, State) ->
 do_handle(<<"create_channel! ", ChannelName/binary>>, ClientID) ->
   case irc_mnesia:create_channel(ChannelName, ClientID) of
     ok ->
-      io_lib:format("Channel '~p' created~n", [ChannelName]);
+      io_lib:format("Channel '~s' created~n", [ChannelName]);
     channel_already_registered ->
-      io_lib:format("Channel '~p' already registered~n", [ChannelName]);
+      io_lib:format("Channel '~s' already registered~n", [ChannelName]);
     client_not_registered ->
-      io_lib:format("Client '~p' not registered~n", [ClientID])
+      io_lib:format("Client '~s' not registered~n", [ClientID])
   end;
 do_handle(<<"close_channel! ", ChannelName/binary>>, ClientID) ->
   case irc_mnesia:close_channel(ChannelName, ClientID) of
     ok ->
-      io_lib:format("Channel '~p' closed~n", [ChannelName]);
+      io_lib:format("Channel '~s' closed~n", [ChannelName]);
     channel_not_registered ->
-      io_lib:format("Channel '~p' not registered~n", [ChannelName]);
+      io_lib:format("Channel '~s' not registered~n", [ChannelName]);
     channel_non_owner ->
-      io_lib:format("Not owner of channel '~p'~n", [ChannelName])
+      io_lib:format("Not owner of channel '~s'~n", [ChannelName])
+  end;
+do_handle(<<"set_name! ", Name/binary>>, ClientID) ->
+  case length(binary_to_list(Name)) of
+    Length when Length < 3 ->
+      io_lib:format("Name too short~n", []);
+    Length when Length > 12 ->
+      io_lib:format("Name too long~n", []);
+    _ValidLength ->
+      irc_client:set_name(ClientID, Name),
+      io_lib:format("Name has been updated to '~s'~n", [Name])
   end;
 do_handle(Packet, _State) ->
   ?INVALID_COMMAND(Packet).

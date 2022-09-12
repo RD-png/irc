@@ -13,10 +13,11 @@
 
 %% API
 -export([create_mnesia_table/0,
-         register/2,
+         register/1,
          update/1,
          unregister/1,
-         fetch/1]).
+         fetch/1,
+         set_name/2]).
 
 -define(CLIENT_TABLE, client).
 
@@ -27,19 +28,16 @@
 -spec create_mnesia_table() -> ok.
 create_mnesia_table() ->
   {atomic, ok} =
-    mnesia:create_table(client,
-                        [{attributes, record_info(fields, client)},
-                         {type, ordered_set}]),
+    mnesia:create_table(client, [{attributes, record_info(fields, client)},
+                                 {type, ordered_set}]),
   ok.
 
--spec register(Name, Protocol) -> Client when
-    Name     :: binary(),
+-spec register(Protocol) -> Client when
     Protocol :: socket_connection(),
     Client   :: client().
-register(Name, Protocol) ->
+register(Protocol) ->
   Client = #client{id       = uuid:uuid1(),
-                   name     = Name,
-                   joined   = time(),
+                   joined   = {time(), date()},
                    protocol = Protocol},
   mnesia:dirty_write(Client),
   Client#client.id.
@@ -50,7 +48,7 @@ update(Client) when is_record(Client, client) ->
   mnesia:dirty_write(Client).
 
 -spec unregister(ClientID) -> ok when
-    ClientID :: client().
+    ClientID :: client_id().
 unregister(ClientID) ->
   mnesia:dirty_delete({?CLIENT_TABLE, ClientID}).
 
@@ -65,3 +63,11 @@ fetch(ClientID) ->
     [] ->
       none
   end.
+
+-spec set_name(ClientID, Name) -> ok when
+    ClientID :: client_id(),
+    Name     :: binary().
+set_name(ClientID, Name) ->
+  Client = fetch(ClientID),
+  UpdatedClient = Client#client{name = Name},
+  update(UpdatedClient).

@@ -1,5 +1,5 @@
 {application, irc,
- [{description, "IRC like chat server"},
+ [{description, "IRC like chat server for netcat"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {irc_app, []}},

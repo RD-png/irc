@@ -26,8 +26,8 @@
 
 -define(SERVER, ?MODULE).
 
--type connection_id() :: {inet:hostname() | inet:ip_address(),
-                          inet:port_number()}.
+-type connection_id() :: {inet:hostname() |
+                          inet:ip_address(), inet:port_number()}.
 
 %%%===================================================================
 %%% API
