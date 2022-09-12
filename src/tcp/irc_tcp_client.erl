@@ -46,9 +46,7 @@ init(Ref, Transport, _Opts = []) ->
 loop(Socket, Transport, #state{id = ClientID} = State) ->
   case Transport:recv(Socket, 0, ?SOCKET_TIMEOUT) of
     {ok, Packet} ->
-      CleanPacket = re:replace(Packet, "[\r\n]$", "",
-                               [global, {return, binary}]),
-      case irc_socket_client:handle(CleanPacket, ClientID) of
+      case irc_socket_client:handle(Packet, ClientID) of
         ok ->
           ok;
         Response ->
@@ -56,8 +54,7 @@ loop(Socket, Transport, #state{id = ClientID} = State) ->
       end,
       loop(Socket, Transport, State);
     {error, timeout} ->
-      Transport:send(Socket, ?TIMEOUT_MSG),
-      irc_client:unregister(ClientID);
+      Transport:send(Socket, ?TIMEOUT_MSG);
     {error, Reason} ->
       lager:info("TCP Client '~p' exited with reason '~p'", [ClientID, Reason])
   end,

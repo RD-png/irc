@@ -49,7 +49,6 @@ get_spec() ->
 %%%===================================================================
 
 init([Protocol]) ->
-  process_flag(trap_exit, true),
   ClientID = irc_client:register(<<"test2">>, Protocol),
   {ok, #state{id = ClientID, protocol = Protocol}}.
 
@@ -61,16 +60,15 @@ handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({udp, Socket, Host, Port, Packet}, #state{id = ClientID} = State) ->
-  CleanPacket = re:replace(Packet, "[\r\n]$", "",
-                           [global, {return, binary}]),
-  case irc_socket_client:handle(CleanPacket, ClientID) of
+  case irc_socket_client:handle(Packet, ClientID) of
     ok ->
       ok;
     Response ->
       gen_udp:send(Socket, Host, Port, Response)
   end,
-  {noreply, State};
-handle_info({'EXIT', _Pid, _Reason}, State) ->
+  {noreply, State, ?SOCKET_TIMEOUT};
+handle_info(timeout, #state{protocol = {Socket, Host, Port}} = State) ->
+  gen_udp:send(Socket, Host, Port, ?TIMEOUT_MSG),
   {stop, normal, State};
 handle_info(Info, State) ->
   lager:error("Received unhandled message ~p", [Info]),

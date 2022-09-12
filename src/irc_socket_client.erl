@@ -25,7 +25,9 @@
     Response :: ok | Msg,
     Msg      :: io_lib:chars().
 handle(Packet, State) ->
-  do_handle(Packet, State).
+  CleanPacket = re:replace(Packet, "[\r\n]$", "",
+                           [global, {return, binary}]),
+  do_handle(CleanPacket, State).
 
 %%%===================================================================
 %%% Internal functions
@@ -49,8 +51,5 @@ do_handle(<<"close_channel! ", ChannelName/binary>>, ClientID) ->
     channel_non_owner ->
       io_lib:format("Not owner of channel '~p'~n", [ChannelName])
   end;
-do_handle(<<"exit!">>, ClientID) ->
-  erlang:exit(self(), test),
-  ok;
-do_handle(Packet, State) ->
-  {?INVALID_COMMAND(Packet), State}.
+do_handle(Packet, _State) ->
+  ?INVALID_COMMAND(Packet).
