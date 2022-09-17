@@ -69,6 +69,15 @@ do_handle(<<"subscribe_channel! ", ChannelName/binary>>, ClientID) ->
     client_already_subscribed ->
       io_lib:format("Already subscribed to channel '~s'~n", [ChannelName])
   end;
+do_handle(<<"unsubscribe_channel! ", ChannelName/binary>>, ClientID) ->
+  case irc_mnesia:unsubscribe_channel(ChannelName, ClientID) of
+    ok ->
+      io_lib:format("Unsubscribed from channel '~s'~n", [ChannelName]);
+    channel_not_registered ->
+      io_lib:format("Channel '~s' not registered~n", [ChannelName]);
+    client_not_subscribed ->
+      io_lib:format("Client '~p' not subscribed~n", [ClientID])
+  end;
 do_handle(<<"msg_channel!", ChannelName/binary>>, ClientID) ->
   case irc_mnesia:msg_channel(ChannelName, ClientID) of
     ok ->
@@ -76,7 +85,7 @@ do_handle(<<"msg_channel!", ChannelName/binary>>, ClientID) ->
     channel_not_registered ->
       io_lib:format("Channel '~s' not registered~n", [ChannelName]);
     client_not_subscribed ->
-      io_lib:format("Client '~s' not subscribed~n", [ClientID])
+      io_lib:format("Client '~p' not subscribed~n", [ClientID])
   end;
 do_handle(Packet, _State) ->
   ?INVALID_COMMAND(Packet).

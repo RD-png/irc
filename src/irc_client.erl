@@ -63,7 +63,7 @@ fetch(ClientID) ->
 -spec create_channel(ChannelName, Client) -> ok when
     ChannelName :: channel_name(),
     Client      :: client().
-create_channel(ChannelName, #client{owned = Owned,
+create_channel(ChannelName, #client{owned      = Owned,
                                     subscribed = Subscribed} = Client) ->
   UpdatedClient = Client#client{owned      = [ChannelName | Owned],
                                 subscribed = [ChannelName | Subscribed]},
@@ -72,7 +72,7 @@ create_channel(ChannelName, #client{owned = Owned,
 -spec close_channel(ChannelName, Client) -> ok when
     ChannelName :: channel_name(),
     Client      :: client().
-close_channel(ChannelName, #client{owned = Owned,
+close_channel(ChannelName, #client{owned      = Owned,
                                    subscribed = Subscribed} = Client) ->
   UpdatedClient =
     Client#client{owned      = lists:delete(ChannelName, Owned),

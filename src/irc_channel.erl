@@ -16,7 +16,8 @@
          create/2,
          fetch/1,
          unregister/1,
-         subscribe/2]).
+         subscribe/2,
+         unsubscribe/2]).
 
 -define(CHANNEL_TABLE, channel).
 
@@ -41,7 +42,7 @@ create(ChannelName, ClientID) ->
     false ->
       Channel = #channel{name        = ChannelName,
                          owner       = ClientID,
-                         subscribers = [ClientID]},
+                         subscribers = [{ClientID, self()}]},
       mnesia:dirty_write(Channel);
     true ->
       channel_already_registered
@@ -78,6 +79,20 @@ subscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
       mnesia:dirty_write(UpdatedChannel);
     true ->
       client_already_subscribed
+  end.
+
+-spec unsubscribe(Channel, ClientID) -> Result when
+    Channel  :: channel(),
+    ClientID :: client_id(),
+    Result   :: ok | client_not_subscribed.
+unsubscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
+  case is_subscribed(Subscribers, ClientID) of
+    true ->
+      UpdatedSubscribers = lists:delete({ClientID, self()}, Subscribers),
+      UpdatedChannel = Channel#channel{subscribers = UpdatedSubscribers},
+      mnesia:dirty_write(UpdatedChannel);
+    false ->
+      client_not_subscribed
   end.
 
 %%%===================================================================

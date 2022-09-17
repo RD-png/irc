@@ -14,6 +14,7 @@
          create_channel/2,
          close_channel/2,
          subscribe_channel/2,
+         unsubscribe_channel/2,
          msg_channel/3]).
 
 %%%-------------------------------------------------------------------
@@ -74,6 +75,18 @@ subscribe_channel(ChannelName, ClientID) ->
       channel_not_registered
   end.
 
+-spec unsubscribe_channel(ChannelName, ClientID) -> Result when
+    ChannelName :: channel_name(),
+    ClientID    :: client_id(),
+    Result      :: ok | channel_not_registered | client_not_subscribed.
+unsubscribe_channel(ChannelName, ClientID) ->
+  case irc_channel:fetch(ChannelName) of
+    #channel{} = Channel ->
+      irc_channel:unsubscribe(Channel, ClientID);
+    _ChannelNotRegistered ->
+      channel_not_registered
+  end.
+
 -spec msg_channel(ChannelName, Msg, ClientID) -> ok when
     ChannelName :: channel_name(),
     Msg         :: binary(),
@@ -81,8 +94,9 @@ subscribe_channel(ChannelName, ClientID) ->
 msg_channel(ChannelName, Msg, ClientID) ->
   case irc_channel:fetch(ChannelName) of
     #channel{subscribers = Subscribers} ->
-      Client = irc_client:fetch(ClientID),
-      dispatch_channel_msg(Subscribers, Msg, Client);
+      #client{name = ClientName} = irc_client:fetch(ClientID),
+      ChannelMsg = io_lib:format("[~s] ~s: ~p", [ChannelName, ClientName, Msg]),
+      dispatch_channel_msg(Subscribers, ChannelMsg);
     _ChannelNotRegistered ->
       channel_not_registered
   end.
@@ -91,5 +105,9 @@ msg_channel(ChannelName, Msg, ClientID) ->
 %%% Internal functions
 %%%===================================================================
 
-dispatch_channel_msg(_Subscribers, _Msg, _Client) ->
-  ok.
+%% Would be better to split the list of subscribers and dispatch the messages
+%% in batches via a group of poolboy workers.
+dispatch_channel_msg(Subscribers, Msg) ->
+  lists:foreach(fun({_ClientID, ClientPid}) ->
+                    gen_server:cast(ClientPid, {subscription_msg, Msg})
+                end, Subscribers).
