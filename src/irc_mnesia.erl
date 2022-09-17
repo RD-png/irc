@@ -52,9 +52,9 @@ create_channel(ChannelName, ClientID) ->
                  | channel_non_owner
                  | channel_not_registered.
 close_channel(ChannelName, ClientID) ->
-  Client = irc_client:fetch(ClientID),
   case irc_channel:fetch(ChannelName) of
     #channel{owner = OwnerID} = Channel when ClientID =:= OwnerID ->
+      Client = irc_client:fetch(ClientID),
       irc_client:close_channel(ChannelName, Client),
       irc_channel:unregister(Channel);
     #channel{} = _Channel ->
