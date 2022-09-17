@@ -3,6 +3,16 @@
 %%%===================================================================
 
 -define(SOCKET_TIMEOUT, 600*100).
+-define(COMMAND_HELP, io_lib:format("
+IRC Commands:
+----------------------------------------------------------------
+create_channel!      $Name -- Create a new chat channel
+close_channel!       $Name -- Close a channel you own
+set_name!            $Name -- Set your username in chat channels
+subscribe_channel!   $Name -- Subscribe to chat channel
+unsubscribe_channel! $Name -- Unsubscribe from chat channel
+----------------------------------------------------------------
+", [])).
 -define(TIMEOUT_MSG,
         io_lib:format("Disconnected from server, please reconnect~n", [])).
 -define(QUIT_MSG,

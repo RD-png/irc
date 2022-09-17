@@ -25,22 +25,21 @@
     Response :: ok | Msg,
     Msg      :: io_lib:chars().
 handle(Packet, State) ->
-  CleanPacket = re:replace(Packet, "[\r\n]$", "",
-                           [global, {return, binary}]),
+  CleanPacket = re:replace(Packet, "[\r\n]$", "", [global, {return, binary}]),
   do_handle(CleanPacket, State).
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
+do_handle(<<"help!", _Rest/binary>>, _ClientID) ->
+  ?COMMAND_HELP;
 do_handle(<<"create_channel! ", ChannelName/binary>>, ClientID) ->
   case irc_mnesia:create_channel(ChannelName, ClientID) of
     ok ->
       io_lib:format("Channel '~s' created~n", [ChannelName]);
     channel_already_registered ->
-      io_lib:format("Channel '~s' already registered~n", [ChannelName]);
-    client_not_registered ->
-      io_lib:format("Client '~s' not registered~n", [ClientID])
+      io_lib:format("Channel '~s' already registered~n", [ChannelName])
   end;
 do_handle(<<"close_channel! ", ChannelName/binary>>, ClientID) ->
   case irc_mnesia:close_channel(ChannelName, ClientID) of
@@ -60,6 +59,24 @@ do_handle(<<"set_name! ", Name/binary>>, ClientID) ->
     _ValidLength ->
       irc_client:set_name(ClientID, Name),
       io_lib:format("Name has been updated to '~s'~n", [Name])
+  end;
+do_handle(<<"subscribe_channel! ", ChannelName/binary>>, ClientID) ->
+  case irc_mnesia:subscribe_channel(ChannelName, ClientID) of
+    ok ->
+      io_lib:format("Subscribed to channel '~s'~n", [ChannelName]);
+    channel_not_registered ->
+      io_lib:format("Channel '~s' not registered~n", [ChannelName]);
+    client_already_subscribed ->
+      io_lib:format("Already subscribed to channel '~s'~n", [ChannelName])
+  end;
+do_handle(<<"msg_channel!", ChannelName/binary>>, ClientID) ->
+  case irc_mnesia:msg_channel(ChannelName, ClientID) of
+    ok ->
+      ok;
+    channel_not_registered ->
+      io_lib:format("Channel '~s' not registered~n", [ChannelName]);
+    client_not_subscribed ->
+      io_lib:format("Client '~s' not subscribed~n", [ClientID])
   end;
 do_handle(Packet, _State) ->
   ?INVALID_COMMAND(Packet).

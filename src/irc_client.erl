@@ -14,9 +14,10 @@
 %% API
 -export([create_mnesia_table/0,
          register/1,
-         update/1,
          unregister/1,
          fetch/1,
+         create_channel/2,
+         close_channel/2,
          set_name/2]).
 
 -define(CLIENT_TABLE, client).
@@ -42,11 +43,6 @@ register(Protocol) ->
   mnesia:dirty_write(Client),
   Client#client.id.
 
--spec update(Client) -> ok when
-    Client :: client().
-update(Client) when is_record(Client, client) ->
-  mnesia:dirty_write(Client).
-
 -spec unregister(ClientID) -> ok when
     ClientID :: client_id().
 unregister(ClientID) ->
@@ -64,10 +60,29 @@ fetch(ClientID) ->
       none
   end.
 
+-spec create_channel(ChannelName, Client) -> ok when
+    ChannelName :: channel_name(),
+    Client      :: client().
+create_channel(ChannelName, #client{owned = Owned,
+                                    subscribed = Subscribed} = Client) ->
+  UpdatedClient = Client#client{owned      = [ChannelName | Owned],
+                                subscribed = [ChannelName | Subscribed]},
+  mnesia:dirty_write(UpdatedClient).
+
+-spec close_channel(ChannelName, Client) -> ok when
+    ChannelName :: channel_name(),
+    Client      :: client().
+close_channel(ChannelName, #client{owned = Owned,
+                                   subscribed = Subscribed} = Client) ->
+  UpdatedClient =
+    Client#client{owned      = lists:delete(ChannelName, Owned),
+                  subscribed = lists:delete(ChannelName, Subscribed)},
+  mnesia:dirty_write(UpdatedClient).
+
 -spec set_name(ClientID, Name) -> ok when
     ClientID :: client_id(),
     Name     :: binary().
 set_name(ClientID, Name) ->
   Client = fetch(ClientID),
   UpdatedClient = Client#client{name = Name},
-  update(UpdatedClient).
+  mnesia:dirty_write(UpdatedClient).
