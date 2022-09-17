@@ -17,7 +17,8 @@
          fetch/1,
          unregister/1,
          subscribe/2,
-         unsubscribe/2]).
+         unsubscribe/2,
+         dispatch_msg/3]).
 
 -define(CHANNEL_TABLE, channel).
 
@@ -94,6 +95,20 @@ unsubscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
     false ->
       client_not_subscribed
   end.
+
+-spec dispatch_msg(Channel, Client, Msg) -> ok when
+    Channel :: channel(),
+    Client  :: client(),
+    Msg     :: binary().
+dispatch_msg(#channel{name = ChannelName, subscribers = Subscribers},
+             #client{name = ClientName}, Msg) ->
+  ChannelMsg =
+    io_lib:format("[~s] ~s: ~s", [ChannelName, ClientName, Msg]),
+  DispatchFn = fun({_ClientID, ClientPID}) ->
+                   gen_server:cast(ClientPID, {subscription_msg, ChannelMsg})
+               end,
+  lists:foreach(DispatchFn, Subscribers).
+
 
 %%%===================================================================
 %%% Internal functions

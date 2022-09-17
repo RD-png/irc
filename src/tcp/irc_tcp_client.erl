@@ -52,6 +52,10 @@ handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
 
+handle_cast({subscription_msg, Msg}, #state{transport = Transport,
+                                            protocol = Socket} = State) ->
+  Transport:send(Socket, Msg),
+  {noreply, State};
 handle_cast(_Request, State) ->
   {noreply, State}.
 

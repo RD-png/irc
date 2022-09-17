@@ -56,6 +56,10 @@ handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
 
+handle_cast({subscription_msg, Msg},
+            #state{protocol = {Socket, Host, Port}} = State) ->
+  gen_udp:send(Socket, Host, Port, Msg),
+  {noreply, State};
 handle_cast(_Request, State) ->
   {noreply, State}.
 

@@ -78,8 +78,9 @@ do_handle(<<"unsubscribe_channel! ", ChannelName/binary>>, ClientID) ->
     client_not_subscribed ->
       io_lib:format("Client '~p' not subscribed~n", [ClientID])
   end;
-do_handle(<<"msg_channel!", ChannelName/binary>>, ClientID) ->
-  case irc_mnesia:msg_channel(ChannelName, ClientID) of
+do_handle(<<"msg_channel! ", Args/binary>>, ClientID) ->
+  [ChannelName, Msg] = parse_args(Args),
+  case irc_mnesia:msg_channel(ChannelName, Msg, ClientID) of
     ok ->
       ok;
     channel_not_registered ->
@@ -89,3 +90,6 @@ do_handle(<<"msg_channel!", ChannelName/binary>>, ClientID) ->
   end;
 do_handle(Packet, _State) ->
   ?INVALID_COMMAND(Packet).
+
+parse_args(Args) ->
+  binary:split(Args, <<" | ">>, [global, trim]).
