@@ -67,6 +67,7 @@ handle_cast(_Request, State) ->
   {noreply, State}.
 
 handle_info({udp, Socket, Host, Port, _Msg} = Packet, State) ->
+  inet:setopts(Socket, [{active, once}]),
   {NewState, Client} = case is_registered({Host, Port}, State) of
                          {_Key, ClientPID}->
                            {State, ClientPID};
@@ -77,7 +78,8 @@ handle_info({udp, Socket, Host, Port, _Msg} = Packet, State) ->
                        end,
   Client ! Packet,
   {noreply, NewState};
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+  lager:error("Received unhandled message ~p", [Info]),
   {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -92,7 +94,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 start_udp() ->
   Port = irc_app:get_env(udp_port),
-  gen_udp:open(Port, [{mode, binary}, {reuseaddr, true}]).
+  gen_udp:open(Port, [{mode, binary}, {reuseaddr, true}, {active, once}]).
 
 register(Key, ClientPID, State) ->
   [{Key, ClientPID} | State].
