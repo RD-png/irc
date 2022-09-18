@@ -62,20 +62,15 @@ fetch(ClientID) ->
 -spec create_channel(ChannelName, Client) -> ok when
     ChannelName :: channel_name(),
     Client      :: client().
-create_channel(ChannelName, #client{owned      = Owned,
-                                    subscribed = Subscribed} = Client) ->
-  UpdatedClient = Client#client{owned      = [ChannelName | Owned],
-                                subscribed = [ChannelName | Subscribed]},
+create_channel(ChannelName, #client{owned = Owned} = Client) ->
+  UpdatedClient = Client#client{owned = [ChannelName | Owned]},
   mnesia:dirty_write(UpdatedClient).
 
 -spec close_channel(ChannelName, Client) -> ok when
     ChannelName :: channel_name(),
     Client      :: client().
-close_channel(ChannelName, #client{owned      = Owned,
-                                   subscribed = Subscribed} = Client) ->
-  UpdatedClient =
-    Client#client{owned      = lists:delete(ChannelName, Owned),
-                  subscribed = lists:delete(ChannelName, Subscribed)},
+close_channel(ChannelName, #client{owned = Owned} = Client) ->
+  UpdatedClient = Client#client{owned = lists:delete(ChannelName, Owned)},
   mnesia:dirty_write(UpdatedClient).
 
 -spec set_name(ClientID, Name) -> ok when

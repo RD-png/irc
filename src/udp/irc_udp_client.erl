@@ -80,9 +80,11 @@ handle_info(Info, State) ->
   lager:error("Received unhandled message ~p", [Info]),
   {noreply, State}.
 
-terminate(_Reason, #state{id = ClientID, protocol = {_Socket, Host, Port}} = _State) ->
-  irc_client:unregister(ClientID),
-  irc_udp_manager:unregister({Host, Port}).
+terminate(_Reason, #state{id = ClientID,
+                          protocol = {_Socket, Host, Port}} = _State) ->
+  irc_udp_manager:unregister({Host, Port}),
+  irc_server:close_client(ClientID),
+  irc_client:unregister(ClientID).
 
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.

@@ -79,8 +79,9 @@ handle_info(Info, State) ->
   lager:error("Received unhandled message ~p", [Info]),
   {noreply, State}.
 
-terminate(_Reason, _State) ->
-  ok.
+terminate(_Reason, #state{id = ClientID} = _State) ->
+  irc_server:close_client(ClientID),
+  irc_client:unregister(ClientID).
 
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.

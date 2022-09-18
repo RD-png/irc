@@ -120,7 +120,7 @@ is_subscribed(Subscribers, ClientID) ->
 do_dispatch_msg([], _Msg) ->
   ok;
 do_dispatch_msg(Subscribers, Msg) ->
-  CurrentBatch = lists:sublist(Subscribers, 100),
+  CurrentBatch = lists:sublist(Subscribers, 25),
   NextBatch    = lists:subtract(Subscribers, CurrentBatch),
   irc_worker:dispatch_msg(CurrentBatch, Msg),
   do_dispatch_msg(NextBatch, Msg).

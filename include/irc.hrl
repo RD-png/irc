@@ -5,13 +5,11 @@
 -record(channel, {name        = <<>> :: binary(),
                   topic       = <<>> :: binary(),
                   owner              :: client_id(),
-                  moderators  = []   :: [client_id()],
                   subscribers = []   :: [{client_id(), pid()}]}).
 
 -record(client, {id                       :: client_id(),
                  name        = <<"User">> :: binary(),
                  joined                   :: {calendar:time(), calendar:date()},
-                 subscribed  = []         :: [channel_name()],
                  owned       = []         :: [channel_name()],
                  protocol                 :: socket_connection()}).
 

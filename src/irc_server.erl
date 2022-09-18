@@ -15,7 +15,8 @@
          close_channel/2,
          subscribe_channel/2,
          unsubscribe_channel/2,
-         msg_channel/3]).
+         msg_channel/3,
+         close_client/1]).
 
 %%%-------------------------------------------------------------------
 %% API
@@ -97,3 +98,13 @@ msg_channel(ChannelName, Msg, ClientID) ->
     _ChannelNotRegistered ->
       channel_not_registered
   end.
+
+-spec close_client(ClientID) -> ok when
+    ClientID :: client_id().
+close_client(ClientID) ->
+  #client{owned = Owned} = irc_client:fetch(ClientID),
+  CloseFn =
+    fun(ChannelName) ->
+        close_channel(ChannelName, ClientID)
+    end,
+  lists:foreach(CloseFn, Owned).
