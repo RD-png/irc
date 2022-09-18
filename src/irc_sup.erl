@@ -34,6 +34,7 @@ init([]) ->
   SupFlags = #{strategy => one_for_all,
                intensity => 0,
                period => 1},
-  ChildSpecs = [irc_client_sup:get_spec()],
+  ChildSpecs = [irc_client_sup:get_spec(),
+                irc_worker:get_spec()],
 
   {ok, {SupFlags, ChildSpecs}}.

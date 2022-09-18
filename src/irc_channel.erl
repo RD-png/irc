@@ -103,11 +103,8 @@ unsubscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
 dispatch_msg(#channel{name = ChannelName, subscribers = Subscribers},
              #client{name = ClientName}, Msg) ->
   ChannelMsg =
-    io_lib:format("[~s] ~s: ~s", [ChannelName, ClientName, Msg]),
-  DispatchFn = fun({_ClientID, ClientPID}) ->
-                   gen_server:cast(ClientPID, {subscription_msg, ChannelMsg})
-               end,
-  lists:foreach(DispatchFn, Subscribers).
+    io_lib:format("[~s] ~s: ~s~n", [ChannelName, ClientName, Msg]),
+  do_dispatch_msg(Subscribers, ChannelMsg).
 
 
 %%%===================================================================
@@ -119,3 +116,11 @@ is_registered(ChannelName) ->
 
 is_subscribed(Subscribers, ClientID) ->
   lists:member({ClientID, self()}, Subscribers).
+
+do_dispatch_msg([], _Msg) ->
+  ok;
+do_dispatch_msg(Subscribers, Msg) ->
+  CurrentBatch = lists:sublist(Subscribers, 100),
+  NextBatch    = lists:subtract(Subscribers, CurrentBatch),
+  irc_worker:dispatch_msg(CurrentBatch, Msg),
+  do_dispatch_msg(NextBatch, Msg).
