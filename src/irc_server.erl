@@ -3,7 +3,7 @@
 %%% @copyright (C) 2022, Ryan User
 %%% Created :  18 Aug 2022 by Ryan User <ryan@nixos-desktop>
 %%%-------------------------------------------------------------------
--module(irc_mnesia).
+-module(irc_server).
 -author("ryandenby").
 
 -include("irc.hrl").

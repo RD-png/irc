@@ -35,7 +35,6 @@
 start_link(Args) ->
   gen_server:start_link(?MODULE, [], Args).
 
--spec get_spec() -> ok.
 get_spec() ->
   PoolArgs = irc_app:get_env(?POOL),
   poolboy:child_spec(?POOL, PoolArgs).

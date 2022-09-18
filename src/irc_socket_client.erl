@@ -35,14 +35,14 @@ handle(Packet, State) ->
 do_handle(<<"help!", _Rest/binary>>, _ClientID) ->
   ?COMMAND_HELP;
 do_handle(<<"create_channel! ", ChannelName/binary>>, ClientID) ->
-  case irc_mnesia:create_channel(ChannelName, ClientID) of
+  case irc_server:create_channel(ChannelName, ClientID) of
     ok ->
       io_lib:format("Channel '~s' created~n", [ChannelName]);
     channel_already_registered ->
       io_lib:format("Channel '~s' already registered~n", [ChannelName])
   end;
 do_handle(<<"close_channel! ", ChannelName/binary>>, ClientID) ->
-  case irc_mnesia:close_channel(ChannelName, ClientID) of
+  case irc_server:close_channel(ChannelName, ClientID) of
     ok ->
       io_lib:format("Channel '~s' closed~n", [ChannelName]);
     channel_not_registered ->
@@ -61,7 +61,7 @@ do_handle(<<"set_name! ", Name/binary>>, ClientID) ->
       io_lib:format("Name has been updated to '~s'~n", [Name])
   end;
 do_handle(<<"subscribe_channel! ", ChannelName/binary>>, ClientID) ->
-  case irc_mnesia:subscribe_channel(ChannelName, ClientID) of
+  case irc_server:subscribe_channel(ChannelName, ClientID) of
     ok ->
       io_lib:format("Subscribed to channel '~s'~n", [ChannelName]);
     channel_not_registered ->
@@ -70,7 +70,7 @@ do_handle(<<"subscribe_channel! ", ChannelName/binary>>, ClientID) ->
       io_lib:format("Already subscribed to channel '~s'~n", [ChannelName])
   end;
 do_handle(<<"unsubscribe_channel! ", ChannelName/binary>>, ClientID) ->
-  case irc_mnesia:unsubscribe_channel(ChannelName, ClientID) of
+  case irc_server:unsubscribe_channel(ChannelName, ClientID) of
     ok ->
       io_lib:format("Unsubscribed from channel '~s'~n", [ChannelName]);
     channel_not_registered ->
@@ -81,7 +81,7 @@ do_handle(<<"unsubscribe_channel! ", ChannelName/binary>>, ClientID) ->
 do_handle(<<"msg_channel! ", Args/binary>>, ClientID) ->
   case parse_args(Args) of
     [ChannelName, Msg] ->
-      case irc_mnesia:msg_channel(ChannelName, Msg, ClientID) of
+      case irc_server:msg_channel(ChannelName, Msg, ClientID) of
         ok ->
           ok;
         channel_not_registered ->
