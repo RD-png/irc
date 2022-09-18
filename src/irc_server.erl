@@ -87,10 +87,11 @@ unsubscribe_channel(ChannelName, ClientID) ->
       channel_not_registered
   end.
 
--spec msg_channel(ChannelName, Msg, ClientID) -> ok when
+-spec msg_channel(ChannelName, Msg, ClientID) -> Result when
     ChannelName :: channel_name(),
     Msg         :: binary(),
-    ClientID    :: client_id().
+    ClientID    :: client_id(),
+    Result      :: ok | channel_not_registered | client_not_subscribed.
 msg_channel(ChannelName, Msg, ClientID) ->
   case irc_channel:fetch(ChannelName) of
     #channel{} = Channel ->

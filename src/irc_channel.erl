@@ -96,16 +96,21 @@ unsubscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
       client_not_subscribed
   end.
 
--spec dispatch_msg(Channel, Client, Msg) -> ok when
+-spec dispatch_msg(Channel, Client, Msg) -> Result when
     Channel :: channel(),
     Client  :: client(),
-    Msg     :: binary().
+    Msg     :: binary(),
+    Result  :: ok | client_not_subscribed.
 dispatch_msg(#channel{name = ChannelName, subscribers = Subscribers},
-             #client{name = ClientName}, Msg) ->
-  ChannelMsg =
-    io_lib:format("[~s] ~s: ~s~n", [ChannelName, ClientName, Msg]),
-  do_dispatch_msg(Subscribers, ChannelMsg).
-
+             #client{id = ClientID, name = ClientName}, Msg) ->
+  case is_subscribed(Subscribers, ClientID) of
+    true ->
+      ChannelMsg = io_lib:format("[~s] ~s: ~s~n",
+                                 [ChannelName, ClientName, Msg]),
+      do_dispatch_msg(Subscribers, ChannelMsg);
+    false ->
+      client_not_subscribed
+  end.
 
 %%%===================================================================
 %%% Internal functions
