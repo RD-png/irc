@@ -34,10 +34,9 @@ create_mnesia_table() ->
                          {type, ordered_set}]),
   ok.
 
--spec create(ChannelName, ClientID) -> Result when
+-spec create(ChannelName, ClientID) -> ok | channel_already_registered when
     ChannelName :: channel_name(),
-    ClientID    :: client_id(),
-    Result      :: ok | channel_already_registered.
+    ClientID    :: client_id().
 create(ChannelName, ClientID) ->
   case is_registered(ChannelName) of
     false ->
@@ -56,9 +55,8 @@ unregister(Channel) when is_record(Channel, channel) ->
 unregister(_Channel) ->
   false.
 
--spec fetch(ChannelName) -> Result when
+-spec fetch(ChannelName) -> Channel | none when
     ChannelName :: channel_name(),
-    Result      :: Channel | none,
     Channel     :: channel().
 fetch(ChannelName) ->
   case mnesia:dirty_read({?CHANNEL_TABLE, ChannelName}) of
@@ -68,10 +66,9 @@ fetch(ChannelName) ->
       none
   end.
 
--spec subscribe(Channel, ClientID) -> Result when
+-spec subscribe(Channel, ClientID) -> ok | client_already_subscribed when
     Channel  :: channel(),
-    ClientID :: client_id(),
-    Result   :: ok | client_already_subscribed.
+    ClientID :: client_id().
 subscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
   case is_subscribed(Subscribers, ClientID) of
     false ->
@@ -82,10 +79,9 @@ subscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
       client_already_subscribed
   end.
 
--spec unsubscribe(Channel, ClientID) -> Result when
+-spec unsubscribe(Channel, ClientID) -> ok | client_not_subscribed when
     Channel  :: channel(),
-    ClientID :: client_id(),
-    Result   :: ok | client_not_subscribed.
+    ClientID :: client_id().
 unsubscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
   case is_subscribed(Subscribers, ClientID) of
     true ->
@@ -96,11 +92,10 @@ unsubscribe(#channel{subscribers = Subscribers} = Channel, ClientID) ->
       client_not_subscribed
   end.
 
--spec dispatch_msg(Channel, Client, Msg) -> Result when
+-spec dispatch_msg(Channel, Client, Msg) -> ok | client_not_subscribed when
     Channel :: channel(),
     Client  :: client(),
-    Msg     :: binary(),
-    Result  :: ok | client_not_subscribed.
+    Msg     :: binary().
 dispatch_msg(#channel{name = ChannelName, subscribers = Subscribers},
              #client{id = ClientID, name = ClientName}, Msg) ->
   case is_subscribed(Subscribers, ClientID) of

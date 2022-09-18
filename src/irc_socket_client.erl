@@ -19,10 +19,9 @@
 %%% API
 %%%===================================================================
 
--spec handle(Packet, State) -> Response when
+-spec handle(Packet, State) -> ok | Msg when
     Packet   :: binary(),
     State    :: client(),
-    Response :: ok | Msg,
     Msg      :: io_lib:chars().
 handle(Packet, State) ->
   CleanPacket = re:replace(Packet, "[\r\n]$", "", [global, {return, binary}]),

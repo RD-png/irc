@@ -48,9 +48,8 @@ register(Protocol) ->
 unregister(ClientID) ->
   mnesia:dirty_delete({?CLIENT_TABLE, ClientID}).
 
--spec fetch(ClientID) -> Result when
+-spec fetch(ClientID) -> Client | none when
     ClientID :: client_id(),
-    Result   :: Client | none,
     Client   :: client().
 fetch(ClientID) ->
   case mnesia:dirty_read({?CLIENT_TABLE, ClientID}) of
